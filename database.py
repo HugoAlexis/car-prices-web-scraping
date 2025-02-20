@@ -8,8 +8,18 @@ with open('database_squema.sql', 'r') as sql_file:
 
 
 class Database:
+    """
+    Singleton class that handles database connections and
+    database functionality.
+    """
     _instance = None
+
     def __new__(cls, *args, **kwargs):
+        """
+        Creates a new instance of the database if it doesn't already exist. If the
+        database instance already exists, returns the existing one instead of creating
+        a new one.
+        """
         if not cls._instance:
             cls._instance = object.__new__(cls)
             cls._instance.__initialized = False
@@ -18,6 +28,11 @@ class Database:
             return cls._instance
 
     def __init__(self):
+        """
+        If the database instance (singleton) is instantiated, it creates the database
+        connection and cursor. If the database file doesn't exist already, create the
+        database and its schema.
+        """
         if self.__initialized:
             return
         db_exists = os.path.exists(DATABASE_NAME)
@@ -36,6 +51,11 @@ class Database:
         return self._connection
 
     def _create_schema(self):
+        """
+        If the database is being created, it executes the SQL code to create
+        the database schema.
+        :return:
+        """
         print('Initializing Database!')
         self.cursor.executescript(DATABASE_SCHEMA)
         self._connection.commit()
