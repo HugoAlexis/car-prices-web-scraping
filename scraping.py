@@ -1,9 +1,8 @@
-import requests
 from bs4 import BeautifulSoup
 from abc import ABC, abstractmethod
 import re
 import requests
-import time
+
 
 class CarItem:
     def __init__(self, car_id, url, price, status='Disponible'):
@@ -24,6 +23,9 @@ class CarItem:
 
 
 class Scraper:
+    def __init__(self):
+        self.soup = None # Each specific page should create a BeautifulSoup instance
+
     def _scrape_sibling(self, re_pattern, tag_type='p'):
         tag_element = self.soup.find(tag_type, string=re.compile(re_pattern))
         sibling_element = tag_element.next_sibling or tag_element.previous_sibling
@@ -57,6 +59,7 @@ class Scraper:
 
 class KavakItemScraper(Scraper):
     def __init__(self, url):
+        super().__init__()
         self.url = url
         self.html = requests.get(url)
         self.soup = BeautifulSoup(self.html.content, 'html.parser')
@@ -93,6 +96,13 @@ class KavakItemScraper(Scraper):
 
 
 class PageIterator(ABC):
+    """
+    This abstract base class provides a foundation for scraping paginated lists of items from webpages.
+    Concrete subclasses must implement the iteration protocol (through the __iter__ magic method),
+    yielding a PlatformWebScraper instance for each page of results.
+    This PlatformPageScraper instance should be capable of scraping the individual items on that specific
+    page.
+    """
     def __iter__(self):
         return self
 
@@ -102,18 +112,31 @@ class PageIterator(ABC):
         All classes must implement this method to iterate over the pages
         of the current website to extract the pages with the list of car
         items.
-        :return:
+
+        :return: PlatformWebScraper instance
         """
         pass
 
 
 class KavakPageIterator(PageIterator):
+    """
+    This class implements the iteration protocol for scraping Kavak's paginated listings.
+    Each iteration yields a KavakPageScraper instance, representing a single page of results,
+    which can then be used to scrape individual vehicle listings.
+    """
     def __init__(self, base_url):
         self.base_url = base_url
         self.next_iteration = 0
 
 
     def __next__(self):
+        """
+        Implementation of the iteration protocol for the paging listing the items.
+        Each iteration, returns an instance of KavakPageScraper, which allows to scrap
+        the specific page and extract individual vehicle listings.
+
+        :return: KavakPageScraper instance
+        """
         req = requests.get(self.base_url, params={'page': self.next_iteration})
         self.next_iteration += 1
         if req.status_code != 200:
@@ -123,6 +146,7 @@ class KavakPageIterator(PageIterator):
 
 class KavakPageScraper(Scraper):
     def __init__(self, req):
+        super().__init__()
         self.url = req.request.url
         self.soup = BeautifulSoup(req.content, 'html.parser')
 
@@ -142,7 +166,8 @@ class KavakPageScraper(Scraper):
                 all_car_items.append(car_item)
         return all_car_items
 
-    def _div_to_car_item(self, item):
+    @staticmethod
+    def _div_to_car_item(item):
         car_id = item.a.attrs['data-testid'].split('-')[-1]
         url = item.a['href']
         try:
