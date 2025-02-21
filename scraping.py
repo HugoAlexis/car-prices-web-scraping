@@ -6,17 +6,18 @@ import requests
 import time
 
 class CarItem:
-    def __init__(self, car_id, brand, model, year, price, url):
+    def __init__(self, car_id, brand, model, year, price, url, status='Disponible'):
         self.car_id = car_id
         self.url = url
         self.brand = brand
         self.model = model
         self.year = year
         self.price = price
+        self.status = status
 
     def __str__(self):
         return (
-            f'Car ID: {self.car_id}\n'
+            f'Car ID: {self.car_id}  [{self.status}]\n'
             f'Brand: {self.brand}, Model: {self.model}, Year: {self.year}\n'
             f'Price: ${self.price}'
         )
@@ -112,7 +113,7 @@ class PageIterator(ABC):
 class KavakPageIterator(PageIterator):
     def __init__(self, base_url):
         self.base_url = base_url
-        self.next_iteration = 0
+        self.next_iteration = 165
 
 
     def __next__(self):
@@ -151,10 +152,16 @@ class KavakPageScraper(Scraper):
         year = int(
             item.find('p', {'class': 'card-product_cardProduct__subtitle__hbN2a'}).text.strip(' • ')[0]
         )
-        price = int(item.find(
-            'span', {'class': 'amount_uki-amount__large__price__2NvVx'}
-        ).text.replace(',', ''))
-        return CarItem(car_id, brand, model, year, price, url)
+        try:
+            price = int(item.find(
+                'span', {'class': 'amount_uki-amount__large__price__2NvVx'}
+            ).text.replace(',', ''))
+            status = 'Disponible'
+        except AttributeError:
+            price = None
+            status = 'Apartado'
+
+        return CarItem(car_id, brand, model, year, price, url, status)
 
 
     def __str__(self):
