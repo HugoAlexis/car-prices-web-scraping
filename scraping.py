@@ -3,11 +3,11 @@ from bs4 import BeautifulSoup
 from abc import ABC, abstractmethod
 import re
 import requests
-
+import time
 
 class CarItem:
-    def __init__(self, id, brand, model, year, price, url):
-        self.id = id
+    def __init__(self, car_id, brand, model, year, price, url):
+        self.car_id = car_id
         self.url = url
         self.brand = brand
         self.model = model
@@ -78,6 +78,43 @@ class KavakItemScraper(Scraper):
         return None
 
 
+class PageIterator(ABC):
+    def __iter__(self):
+        return self
+
+    @abstractmethod
+    def __next__(self):
+        """
+        All classes must implement this method to iterate over the pages
+        of the current website to extract the pages with the list of car
+        items.
+        :return:
+        """
+        pass
+
+
+class KavakPageIterator(PageIterator):
+    def __init__(self, base_url):
+        self.base_url = base_url
+        self.next_iteration = 0
+
+
+    def __next__(self):
+        req = requests.get(self.base_url, params={'page': self.next_iteration})
+        self.next_iteration += 1
+        if req.status_code != 200:
+            raise StopIteration
+        return KavakPageScraper(req)
+
+
+class KavakPageScraper(Scraper):
+    def __init__(self, req):
+        self.url = req.request.url
+        self.soup = BeautifulSoup(req.content, 'html.parser')
+
+    def __str__(self):
+        return self.url
+
 
 if __name__ == '__main__':
     car_item = KavakItemScraper('https://www.kavak.com/mx/usado/infiniti-qx60-35_sensory_auto_4wd-suv-2019')
@@ -86,3 +123,8 @@ if __name__ == '__main__':
     print(car_item.model)
     print(car_item.year)
     print(car_item.engine_displacement)
+
+    lit = KavakPageIterator('https://www.kavak.com/mx/seminuevos')
+    for li in lit:
+        print(li)
+        time.sleep(15)
