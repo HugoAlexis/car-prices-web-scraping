@@ -6,20 +6,17 @@ import requests
 import time
 
 class CarItem:
-    def __init__(self, car_id, brand, model, year, price, url, status='Disponible'):
+    def __init__(self, car_id, url, price, status='Disponible'):
         self.car_id = car_id
         self.url = url
-        self.brand = brand
-        self.model = model
-        self.year = year
         self.price = price
         self.status = status
 
     def __str__(self):
         return (
-            f'Car ID: {self.car_id}  [{self.status}]\n'
-            f'Brand: {self.brand}, Model: {self.model}, Year: {self.year}\n'
-            f'Price: ${self.price}'
+            f'Car ID: {self.car_id} [{self.status}]'
+            f'price= ${self.price:,}\n'
+            f'URL = {self.url}'
         )
 
     def to_database(self):
@@ -113,7 +110,7 @@ class PageIterator(ABC):
 class KavakPageIterator(PageIterator):
     def __init__(self, base_url):
         self.base_url = base_url
-        self.next_iteration = 165
+        self.next_iteration = 0
 
 
     def __next__(self):
@@ -148,10 +145,6 @@ class KavakPageScraper(Scraper):
     def _div_to_car_item(self, item):
         car_id = item.a.attrs['data-testid'].split('-')[-1]
         url = item.a['href']
-        brand, model = item.find('h3', {'class': 'card-product_cardProduct__title__RR0CK'}).text.split(' • ')
-        year = int(
-            item.find('p', {'class': 'card-product_cardProduct__subtitle__hbN2a'}).text.strip(' • ')[0]
-        )
         try:
             price = int(item.find(
                 'span', {'class': 'amount_uki-amount__large__price__2NvVx'}
@@ -161,7 +154,7 @@ class KavakPageScraper(Scraper):
             price = None
             status = 'Apartado'
 
-        return CarItem(car_id, brand, model, year, price, url, status)
+        return CarItem(car_id, url, price, status)
 
 
     def __str__(self):

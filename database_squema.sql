@@ -1,9 +1,7 @@
 CREATE TABLE car_item (
     id INTEGER PRIMARY KEY,
     url TEXT NOT NULL,
-    brand TEXT,
-    model TEXT,
-    year INTEGER,
+    price INTEGER,
     status TEXT
 );
 
