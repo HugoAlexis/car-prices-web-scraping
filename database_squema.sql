@@ -1,11 +1,11 @@
-CREATE TABLE car_item (
+CREATE TABLE cars (
     id INTEGER PRIMARY KEY,
     url TEXT NOT NULL,
     price INTEGER,
     status TEXT
 );
 
-CREATE TABLE item_info (
+CREATE TABLE car_info (
     id INTEGER PRIMARY KEY,
     version TEXT,
     body_type TEXT,

@@ -42,6 +42,10 @@ class Database:
             self._create_schema()
         self._initialized = True
 
+    def query(self, sql, params):
+        self.cursor.execute(sql, params)
+        self.connection.commit()
+
     @property
     def cursor(self):
         return self._cursor

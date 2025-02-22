@@ -2,6 +2,9 @@ from bs4 import BeautifulSoup
 from abc import ABC, abstractmethod
 import re
 import requests
+from database import Database
+from sqlite3 import IntegrityError
+DB = Database()
 
 
 class CarItem:
@@ -18,8 +21,27 @@ class CarItem:
             f'URL = {self.url}'
         )
 
+    def __bool__(self):
+        conditions = [
+            bool(self.car_id),
+            bool(self.url)
+        ]
+        if all(conditions):
+            return True
+        return False
+
     def to_database(self):
         """Save the item to the database"""
+        try:
+            DB.query(
+                """
+                    INSERT INTO cars (id, url, price, status)
+                    VALUES (?, ?, ?, ?)
+                """,
+                params=(self.car_id, self.url, self.price, self.status)
+            )
+        except IntegrityError:
+            pass
 
 
 class Scraper:
@@ -187,8 +209,10 @@ class KavakPageScraper(Scraper):
 
 
 if __name__ == '__main__':
-    lit = KavakPageIterator('https://www.kavak.com/mx/seminuevos')
-    for li in lit:
-        car_item_1 = li.get_items()[0]
-        print(car_item_1)
-        break
+    page_iterator = KavakPageIterator('https://www.kavak.com/mx/seminuevos')
+    for page in page_iterator:
+        page_items = page.get_items()
+        print(page.url, '\n', 'Found: ', len(page_items), end='\n'*2)
+        for item in page_items:
+            if item:
+                item.to_database()
