@@ -4,6 +4,10 @@ import re
 import requests
 from database import Database
 from sqlite3 import IntegrityError
+import time
+import random
+
+
 DB = Database()
 
 
@@ -126,6 +130,7 @@ class PageIterator(ABC):
     page.
     """
     def __iter__(self):
+        self.next_iteration = 0
         return self
 
     @abstractmethod
@@ -161,6 +166,12 @@ class KavakPageIterator(PageIterator):
         """
         req = requests.get(self.base_url, params={'page': self.next_iteration})
         self.next_iteration += 1
+        pagination_buttons = (
+            BeautifulSoup(req.content, 'html.parser')
+            .select('a.results_results__pagination-nav__Qcftr')
+        )
+        if len(pagination_buttons) < 2:
+            raise StopIteration
         if req.status_code != 200:
             raise StopIteration
         return KavakPageScraper(req)
@@ -216,3 +227,6 @@ if __name__ == '__main__':
         for item in page_items:
             if item:
                 item.to_database()
+        time_to_sleep = 10 + random.random() * 10
+        time.sleep(time_to_sleep)
+    print('Done!')
