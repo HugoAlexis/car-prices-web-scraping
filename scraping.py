@@ -57,17 +57,73 @@ class CarItem:
         except IntegrityError:
             pass
 
-    def scrape_details(self, webpage_model):
+    def scrape_details(self, webpage_scraper):
         """
         Scrape the details from the webpage of a car item, following the model
         passed in the webpage model.
-        :param webpage_model: CarItemWebpage with model to scrap the details.
+        :param webpage_scraperl: CarItemWebpage class to scrap the details for CarItem listing.
         :return: dictionary with details extracted from the CarItem webpage.
         """
         pass
 
 
-class CarItemWebpage:
+class Scraper:
+    """
+    Class with different static methods for safe scraping.
+    """
+    def __init__(self):
+        self.soup = None # Each specific page should create a BeautifulSoup instance
+
+    def _scrape_sibling(self, re_pattern, tag_type='p'):
+        """
+        Find the html element which text contains a string with the given pattern. If
+        the file exists in the page, returns the content of its sibling tag, otherwise
+        return None.
+        :param re_pattern: pattern to find the tag.
+        :param tag_type: type of the tag to find.
+        :return: text of the sibling tag found, or None if not found.
+        """
+        tag_element = self.soup.find(tag_type, string=re.compile(re_pattern))
+        sibling_element = tag_element.next_sibling or tag_element.previous_sibling
+        if sibling_element:
+            return sibling_element.text
+        return None
+
+    def _scrape_css_selector(self,  css_selector, found_many='first', as_string=True, **kwargs):
+        """
+        Given a valid CSS selector, find the first element which matches the selector and
+        returns its content (as a string, or as a list of tags matched).
+
+        :param css_selector: string containing the CSS selector to find.
+        :param found_many: action to perform if many tags are found to match the CSS selector.
+        :param as_string: weather the method will return the tag or its tag.
+        :param kwargs: additional parameters to pass to the CSS selector method.
+        :return: all_tags (as a string if as_string is True, or a list of tags if as_string is False).
+        """
+        if not found_many in ['first', 'last', 'all']:
+            raise ValueError('found many most be in ["first", "last", "all"], but {} passed'.format(found_many))
+        all_tags = self.soup.select(css_selector, **kwargs)
+        if not all_tags:
+            return None
+        if as_string:
+            match found_many:
+                case 'first':
+                    return all_tags[0].text
+                case 'last':
+                    return all_tags[-1].text
+                case 'all':
+                    return ''.join(all_tags)
+        else:
+            match found_many:
+                case 'first':
+                    return all_tags[0]
+                case 'last':
+                    return all_tags[-1]
+                case 'all':
+                    return all_tags
+
+
+class CarItemScraper(Scraper):
     """
     This class serves as a model for extracting car item details from specific websites.
 
@@ -162,61 +218,6 @@ class CarItemWebpage:
 
     def __getattr__(self, name):
         return None
-
-class Scraper:
-    """
-    Class with different static methods for safe scraping.
-    """
-    def __init__(self):
-        self.soup = None # Each specific page should create a BeautifulSoup instance
-
-    def _scrape_sibling(self, re_pattern, tag_type='p'):
-        """
-        Find the html element which text contains a string with the given pattern. If
-        the file exists in the page, returns the content of its sibling tag, otherwise
-        return None.
-        :param re_pattern: pattern to find the tag.
-        :param tag_type: type of the tag to find.
-        :return: text of the sibling tag found, or None if not found.
-        """
-        tag_element = self.soup.find(tag_type, string=re.compile(re_pattern))
-        sibling_element = tag_element.next_sibling or tag_element.previous_sibling
-        if sibling_element:
-            return sibling_element.text
-        return None
-
-    def _scrape_css_selector(self,  css_selector, found_many='first', as_string=True, **kwargs):
-        """
-        Given a valid CSS selector, find the first element which matches the selector and
-        returns its content (as a string, or as a list of tags matched).
-
-        :param css_selector: string containing the CSS selector to find.
-        :param found_many: action to perform if many tags are found to match the CSS selector.
-        :param as_string: weather the method will return the tag or its tag.
-        :param kwargs: additional parameters to pass to the CSS selector method.
-        :return: all_tags (as a string if as_string is True, or a list of tags if as_string is False).
-        """
-        if not found_many in ['first', 'last', 'all']:
-            raise ValueError('found many most be in ["first", "last", "all"], but {} passed'.format(found_many))
-        all_tags = self.soup.select(css_selector, **kwargs)
-        if not all_tags:
-            return None
-        if as_string:
-            match found_many:
-                case 'first':
-                    return all_tags[0].text
-                case 'last':
-                    return all_tags[-1].text
-                case 'all':
-                    return ''.join(all_tags)
-        else:
-            match found_many:
-                case 'first':
-                    return all_tags[0]
-                case 'last':
-                    return all_tags[-1]
-                case 'all':
-                    return all_tags
 
 
 class PageIterator(ABC):
