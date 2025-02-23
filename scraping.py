@@ -45,6 +45,13 @@ class CarItem:
             return True
         return False
 
+    @property
+    def exists_in_database(self):
+        results = DB.select_query(f'SELECT * FROM car_info WHERE id = {self.car_id}')
+        if results:
+            return True
+        return False
+
     def scrape_details(self, WebpageScraper):
         """
         Scrape the details from the webpage of a car item following the model
