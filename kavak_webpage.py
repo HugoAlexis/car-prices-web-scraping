@@ -1,9 +1,8 @@
 import re
-
 import requests
 from bs4 import BeautifulSoup
-
 from scraping import Scraper, PageIterator, CarItem
+from requests.exceptions import RequestException
 
 
 class KavakItemScraper(Scraper):
@@ -75,13 +74,14 @@ class KavakPageIterator(PageIterator):
 
         :return: KavakPageScraper instance
         """
+
         req = requests.get(self.base_url, params={'page': self.next_iteration})
         self.next_iteration += 1
         pagination_buttons = (
             BeautifulSoup(req.content, 'html.parser')
             .select('a.results_results__pagination-nav__Qcftr')
         )
-        if len(pagination_buttons) < 2:
+        if len(pagination_buttons) < 2 and self.next_iteration > 1:
             raise StopIteration
         if req.status_code != 200:
             raise StopIteration
