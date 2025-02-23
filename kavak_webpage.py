@@ -1,11 +1,11 @@
 import re
 import requests
 from bs4 import BeautifulSoup
-from scraping import Scraper, PageIterator, CarItem
+from scraping import Scraper, PageIterator, CarItem, CarItemScraper
 from requests.exceptions import RequestException
 
 
-class KavakItemScraper(Scraper):
+class KavakItemScraper(CarItemScraper):
     """
     Implementation for scraping and retrieving information about vehicles listed on Kavak.
     """
@@ -15,10 +15,7 @@ class KavakItemScraper(Scraper):
         car listing to extract information about the vehicle listed.
         :param url: URL of the Kavak car.
         """
-        super().__init__()
-        self.url = url
-        self.html = requests.get(url)
-        self.soup = BeautifulSoup(self.html.content, 'html.parser')
+        super().__init__(url)
 
     @property
     def item_id(self):
@@ -54,6 +51,127 @@ class KavakItemScraper(Scraper):
             displacement = displacement[0]
             return float(displacement)
         return None
+
+    @property
+    def version(self):
+        """Version of the listed car item"""
+        text = self._scrape_css_selector('ul.breadcrumb_breadcrumb__nPwIW li:nth-child(5)')
+        # Remove engine displacement from the text version
+        if text:
+            text_version = re.compile(r'\d+\.\d+\s(.*)').findall(text)
+            if text_version:
+                return text_version[0].capitalize()
+        return None
+
+    @property
+    def body_style(self):
+        """Body style of the listed car item"""
+        text = self._scrape_sibling('Tipo de Carrocer')
+        if text:
+            return text.capitalize()
+
+    @property
+    def fuel_economy(self):
+        """Fuel eco of the listed car item"""
+        text = self._scrape_sibling('Consumo combinado')
+        if text:
+            return text.capitalize()
+
+    @property
+    def city(self):
+        """City of the listed car item"""
+        text = self._scrape_sibling('Ciudad$')
+        if text:
+            return text.capitalize()
+
+    @property
+    def cylinders(self):
+        """Cylinders of the listed car item"""
+        text = self._scrape_sibling('Cilindros')
+        if text:
+            return int(text)
+
+    @property
+    def number_of_gears(self):
+        """Number of gears of the listed car item"""
+        text = self._scrape_sibling('N.?mero de Velocidades')
+        if text:
+            return int(text)
+
+    @property
+    def horsepower(self):
+        """Horsepower of the listed car item"""
+        text = self._scrape_sibling('Caballos de Fuerza')
+        if text:
+            return int(text)
+
+    @property
+    def doors(self):
+        """Doors of the listed car item"""
+        text = self._scrape_sibling('N.?mero de Puertas')
+        if text:
+            return int(text)
+
+    @property
+    def cruise_control(self):
+        """Wheather the listed car item has cruise control"""
+        text = self._scrape_sibling('Control de Crusero')
+        if text:
+            if text.capitalize() in ['Sí', 'Si']:
+                return True
+            return False
+        return False
+
+    @property
+    def distance_sensor(self):
+        """Weather the listed car item has distance sensor"""
+        text = self._scrape_sibling('Sensor de distancia')
+        if text:
+            if text.capitalize() in ['Sí', 'Si']:
+                return True
+            return False
+
+    @property
+    def start_button(self):
+        """Weather the listed car item has start button"""
+        text = self._scrape_sibling('Boton de Encendido')
+        if text:
+            if text.capitalize() in ['Sí', 'Si']:
+                return True
+            return False
+        return False
+
+    @property
+    def number_of_airbags(self):
+        """Number of airbags of the listed car item"""
+        text = self._scrape_sibling('N.?mero total de Airbags')
+        if text:
+            return int(text)
+        return False
+
+    @property
+    def abs(self):
+        """Weather the  listed car item has ABS system"""
+        text = self._scrape_sibling('Tipo Frenos ABS')
+        if text:
+            if text.capitalize() in ['Sí', 'Si']:
+                return True
+            return False
+        return False
+
+    @property
+    def passengers(self):
+        """Number of passengers of the listed car item"""
+        text = self._scrape_sibling('N.?mero de Pasajeros')
+        if text:
+            return int(text)
+
+    @property
+    def interior_materials(self):
+        """Material used for the interior in the listed car item"""
+        text = self._scrape_sibling('Material Asientos')
+        if text:
+            return text.capitalize()
 
 
 class KavakPageIterator(PageIterator):

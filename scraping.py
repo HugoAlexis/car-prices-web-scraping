@@ -57,14 +57,15 @@ class CarItem:
         except IntegrityError:
             pass
 
-    def scrape_details(self, webpage_scraper):
+    def scrape_details(self, WebpageScraper):
         """
         Scrape the details from the webpage of a car item, following the model
         passed in the webpage model.
         :param webpage_scraperl: CarItemWebpage class to scrap the details for CarItem listing.
         :return: dictionary with details extracted from the CarItem webpage.
         """
-        pass
+        item_scraper = WebpageScraper(self.url)
+        return item_scraper.get_details()
 
 
 class Scraper:
@@ -84,9 +85,14 @@ class Scraper:
         :return: text of the sibling tag found, or None if not found.
         """
         tag_element = self.soup.find(tag_type, string=re.compile(re_pattern))
+        if not tag_element:
+            return None
         sibling_element = tag_element.next_sibling or tag_element.previous_sibling
         if sibling_element:
             return sibling_element.text
+        return None
+
+    def __getattr__(self, attr):
         return None
 
     def _scrape_css_selector(self,  css_selector, found_many='first', as_string=True, **kwargs):
@@ -141,83 +147,32 @@ class CarItemScraper(Scraper):
         if self.req_ok:
             self.soup = BeautifulSoup(self.req.content, 'html.parser')
 
-    @property
-    def brand(self):
-        return None
+    def get_details(self):
+        return {
+            'brand': self.brand,
+            'model': self.model,
+            'year': self.year,
+            'engine_displacement': self.engine_displacement,
+            'version': self.version,
+            'body_style': self.body_style,
+            'fuel_economy': self.fuel_economy,
+            'city': self.city,
+            'cylinders': self.cylinders,
+            'number_of_gears': self.number_of_gears,
+            'horsepower': self.horsepower,
+            'doors': self.doors,
+            'cruise_control': self.cruise_control,
+            'distance_sensor': self.distance_sensor,
+            'start_button': self.start_button,
+            'number_of_airbags': self.number_of_airbags,
+            'abs': self.abs,
+            'passengers': self.passengers,
+            'interior_materials': self.interior_materials,
+        }
 
-    @property
-    def model(self):
-        return None
-
-    @property
-    def year(self):
-        return None
-
-    @property
-    def engine_displacement(self):
-        return None
-
-    @property
-    def version(self):
-        return None
-
-    @property
-    def body_style(self):
-        return None
-
-    @property
-    def fuel_economy(self):
-        return None
-
-    @property
-    def city(self):
-        return None
-
-    @property
-    def cylinders(self):
-        return None
-    @property
-    def number_of_gears(self):
-        return None
-
-    @property
-    def horsepower(self):
-        return None
-
-    @property
-    def doors(self):
-        return None
-
-    @property
-    def cruise_control(self):
-        return None
-
-    @property
-    def distance_sensor(self):
-        return None
-
-    @property
-    def start_button(self):
-        return None
-
-    @property
-    def number_of_airbags(self):
-        return None
-
-    @property
-    def abs(self):
-        return None
-
-    @property
-    def passengers(self):
-        return None
-
-    @property
-    def interior_material(self):
-        return None
-
-    def __getattr__(self, name):
-        return None
+    #def __getattr__(self, name):
+    #    print(name, ' is None? ')
+    #    return None
 
 
 class PageIterator(ABC):
