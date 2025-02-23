@@ -12,6 +12,10 @@ DB = Database()
 
 
 class CarItem:
+    """
+    This class models a car item, providing methods to scrape its details
+    from a listing and store the extracted information in a database."
+    """
     def __init__(self, car_id, url, price, status='Disponible'):
         self.car_id = car_id
         self.url = url
@@ -19,6 +23,10 @@ class CarItem:
         self.status = status
 
     def __str__(self):
+        """
+        String representation of a car item.
+        :return:
+        """
         return (
             f'Car ID: {self.car_id} [{self.status}]'
             f'price= ${self.price:,}\n'
@@ -26,6 +34,10 @@ class CarItem:
         )
 
     def __bool__(self):
+        """
+        Returns true if the no-null attributes of the car item are available.
+        :return: Boolean
+        """
         conditions = [
             bool(self.car_id),
             bool(self.url)
@@ -49,10 +61,21 @@ class CarItem:
 
 
 class Scraper:
+    """
+    Class with different static methods for safe scraping.
+    """
     def __init__(self):
         self.soup = None # Each specific page should create a BeautifulSoup instance
 
     def _scrape_sibling(self, re_pattern, tag_type='p'):
+        """
+        Find the html element which text contains a string with the given pattern. If
+        the file exists in the page, returns the content of its sibling tag, otherwise
+        return None.
+        :param re_pattern: pattern to find the tag.
+        :param tag_type: type of the tag to find.
+        :return: text of the sibling tag found, or None if not found.
+        """
         tag_element = self.soup.find(tag_type, string=re.compile(re_pattern))
         sibling_element = tag_element.next_sibling or tag_element.previous_sibling
         if sibling_element:
@@ -60,6 +83,16 @@ class Scraper:
         return None
 
     def _scrape_css_selector(self,  css_selector, found_many='first', as_string=True, **kwargs):
+        """
+        Given a valid CSS selector, find the first element which matches the selector and
+        returns its content (as a string, or as a list of tags matched).
+
+        :param css_selector: string containing the CSS selector to find.
+        :param found_many: action to perform if many tags are found to match the CSS selector.
+        :param as_string: weather the method will return the tag or its tag.
+        :param kwargs: additional parameters to pass to the CSS selector method.
+        :return: all_tags (as a string if as_string is True, or a list of tags if as_string is False).
+        """
         if not found_many in ['first', 'last', 'all']:
             raise ValueError('found many most be in ["first", "last", "all"], but {} passed'.format(found_many))
         all_tags = self.soup.select(css_selector, **kwargs)
@@ -84,7 +117,15 @@ class Scraper:
 
 
 class KavakItemScraper(Scraper):
+    """
+    Implementation for scraping and retrieving information about vehicles listed on Kavak.
+    """
     def __init__(self, url):
+        """
+        Given the listing url of the Kavak car, makes a request to get the html from the
+        car listing to extract information about the vehicle listed.
+        :param url: URL of the Kavak car.
+        """
         super().__init__()
         self.url = url
         self.html = requests.get(url)
@@ -92,26 +133,31 @@ class KavakItemScraper(Scraper):
 
     @property
     def item_id(self):
+        """Id of the listed car item."""
         text = self._scrape_sibling('Stock ID')
         return int(text)
 
     @property
     def brand(self):
+        """Brand of the listed car item"""
         text = self._scrape_css_selector('ul.breadcrumb_breadcrumb__nPwIW li:nth-child(2) a')
         return text.capitalize()
 
     @property
     def model(self):
+        """Model of the listed car item"""
         text = self._scrape_css_selector('ul.breadcrumb_breadcrumb__nPwIW li:nth-child(3) a')
         return text.capitalize()
 
     @property
     def year(self):
+        """Year of the listed car item"""
         text = self._scrape_css_selector('ul.breadcrumb_breadcrumb__nPwIW li:nth-child(4) a')
         return int(text)
 
     @property
     def engine_displacement(self):
+        """Engine displacement of the listed car item"""
         disp_pattern = re.compile(r'(\d\.\d).*')
         text = self._scrape_css_selector('aside.buy-box_wrapper__jCjj4 h1.header_title__l7xVU') or ''
         displacement = disp_pattern.findall(text)
@@ -178,12 +224,21 @@ class KavakPageIterator(PageIterator):
 
 
 class KavakPageScraper(Scraper):
+    """
+    A class providing the functionality to scrap a Kavak page of results
+    (from pages of the website's pagination).
+    """
     def __init__(self, req):
         super().__init__()
         self.url = req.request.url
         self.soup = BeautifulSoup(req.content, 'html.parser')
 
     def get_items(self):
+        """
+        Return a list of CarIte instances found on the pagination page.
+
+        :return: list of CarItem instances
+        """
         all_items = self._scrape_css_selector(
             '#main-content .results_results__container__tcF4_',
             as_string=False,
@@ -201,6 +256,12 @@ class KavakPageScraper(Scraper):
 
     @staticmethod
     def _div_to_car_item(item):
+        """
+        Given a (BeautifulSoup) tag containing the listing of a car item,
+        return a CarItem instance.
+        :param item: BeautifulSoup tag containing the listing of a car item
+        :return CarItem instance: Instance containing the information of the car listing.
+        """
         car_id = item.a.attrs['data-testid'].split('-')[-1]
         url = item.a['href']
         try:
