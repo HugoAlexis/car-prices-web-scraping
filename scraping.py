@@ -59,6 +59,24 @@ class CarItem:
         except IntegrityError:
             pass
 
+    def scrape_details(self, webpage_model):
+        """
+        Scrape the details from the webpage of a car item, following the model
+        passed in the webpage model.
+        :param webpage_model: CarItemWebpage with model to scrap the details.
+        :return: dictionary with details extracted from the CarItem webpage.
+        """
+        pass
+
+
+class CarItemWebpage:
+    def __init__(self, url):
+        self.url = url
+        self.req = requests.get(url)
+        self.req_ok = (self.req.status_code == 200)
+        if self.req_ok:
+            self.soup = BeautifulSoup(self.req.content, 'html.parser')
+
 
 class Scraper:
     """
