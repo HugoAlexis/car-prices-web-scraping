@@ -78,6 +78,25 @@ class KavakItemScraper(CarItemScraper):
             return text.capitalize()
 
     @property
+    def odometer(self):
+        """Odometer of the listed car item"""
+        text = self._scrape_css_selector('p.header_subtitle__y_nvg')
+        if text:
+            odometer_pattern = re.compile(r'([0-9,]+)\skm.*')
+            odometer = odometer_pattern.findall(text)
+            if odometer:
+                return int(odometer[0].replace(',', ''))
+
+    @property
+    def transmission(self):
+        """Type of transmission of the listed car item"""
+        text = self._scrape_css_selector('aside .buy-box_extended__YcHd4 ul li:nth-child(3) .filters_info__WlDer span:nth-child(2)')
+        if text:
+            return text.strip().capitalize()
+
+
+
+    @property
     def city(self):
         """City of the listed car item"""
         text = self._scrape_sibling('Ciudad$')
@@ -182,6 +201,7 @@ class KavakPageIterator(PageIterator):
     """
     def __init__(self, base_url):
         self.base_url = base_url
+        self.url = None
 
 
     def __next__(self):
@@ -194,6 +214,7 @@ class KavakPageIterator(PageIterator):
         """
 
         req = requests.get(self.base_url, params={'page': self.next_iteration})
+        self.url = req.request.url
         self.next_iteration += 1
         pagination_buttons = (
             BeautifulSoup(req.content, 'html.parser')
