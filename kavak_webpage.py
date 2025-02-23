@@ -192,6 +192,13 @@ class KavakItemScraper(CarItemScraper):
         if text:
             return text.capitalize()
 
+    @property
+    def price_without_discount(self):
+        """Price of the listed car item without discount"""
+        text = self._scrape_css_selector('price_amount__dRxZ8')
+        if text:
+            return int(text.replace(',', '').replace('$', ''))
+
 
 class KavakPageIterator(PageIterator):
     """

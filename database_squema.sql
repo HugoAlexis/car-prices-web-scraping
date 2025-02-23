@@ -26,5 +26,6 @@ CREATE TABLE car_info (
     passengers INTEGER,
     interior_materials TEXT,
     start_button INTEGER,
-    cruise_control INTEGER
+    cruise_control INTEGER,
+    price_without_discount INTEGER
 )

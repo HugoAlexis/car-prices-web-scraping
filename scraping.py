@@ -82,6 +82,7 @@ class CarItem:
             'abs': item_scraper.abs,
             'passengers': item_scraper.passengers,
             'interior_materials' : item_scraper.interior_materials,
+            'price_without_discount': item_scraper.price_without_discount,
         }
         self.item_details = details
         self.details_scraped = True
@@ -109,8 +110,9 @@ class CarItem:
                 INSERT INTO car_info 
                     (id, brand, model, version, year, body_style, engine_displacement, odometer, 
                      city, transmission, mileage, cylinders, horsepower, number_of_gears, doors,
-                     number_of_airbags, abs, passengers, interior_materials, start_button, cruise_control)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     number_of_airbags, abs, passengers, interior_materials, start_button, cruise_control, 
+                     price_without_discount)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (self.car_id, self.item_details['brand'], self.item_details['model'], self.item_details['version'],
                  self.item_details['year'], self.item_details['body_style'], self.item_details['engine_displacement'],
@@ -118,7 +120,8 @@ class CarItem:
                  self.item_details['fuel_economy'], self.item_details['cylinders'], self.item_details['horsepower'],
                  self.item_details['number_of_gears'], self.item_details['doors'], self.item_details['number_of_airbags'],
                  self.item_details['abs'], self.item_details['passengers'], self.item_details['interior_materials'],
-                 self.item_details['start_button'], self.item_details['cruise_control'])
+                 self.item_details['start_button'], self.item_details['cruise_control'],
+                 self.item_details['price_without_discount'])
             )
         except IntegrityError:
             pass
