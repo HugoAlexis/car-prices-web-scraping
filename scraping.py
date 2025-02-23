@@ -70,6 +70,16 @@ class CarItem:
 
 
 class CarItemWebpage:
+    """
+    This class serves as a model for extracting car item details from specific websites.
+
+    Due to varying website structures, each website necessitates a unique CarItemWebpage
+    model.
+    Each desired data point (e.g., price, mileage) should be implemented as a
+    class attribute, returning the scraped value as a string. If a data point is not
+    found on the website, the attribute should return None. If an attribute is not implemented,
+    it will return None.
+    """
     def __init__(self, url):
         self.url = url
         self.req = requests.get(url)
@@ -77,6 +87,83 @@ class CarItemWebpage:
         if self.req_ok:
             self.soup = BeautifulSoup(self.req.content, 'html.parser')
 
+    @property
+    def brand(self):
+        return None
+
+    @property
+    def model(self):
+        return None
+
+    @property
+    def year(self):
+        return None
+
+    @property
+    def engine_displacement(self):
+        return None
+
+    @property
+    def version(self):
+        return None
+
+    @property
+    def body_style(self):
+        return None
+
+    @property
+    def fuel_economy(self):
+        return None
+
+    @property
+    def city(self):
+        return None
+
+    @property
+    def cylinders(self):
+        return None
+    @property
+    def number_of_gears(self):
+        return None
+
+    @property
+    def horsepower(self):
+        return None
+
+    @property
+    def doors(self):
+        return None
+
+    @property
+    def cruise_control(self):
+        return None
+
+    @property
+    def distance_sensor(self):
+        return None
+
+    @property
+    def start_button(self):
+        return None
+
+    @property
+    def number_of_airbags(self):
+        return None
+
+    @property
+    def abs(self):
+        return None
+
+    @property
+    def passengers(self):
+        return None
+
+    @property
+    def interior_material(self):
+        return None
+
+    def __getattr__(self, name):
+        return None
 
 class Scraper:
     """
