@@ -19,6 +19,7 @@ class CarItem:
         self.url = url
         self.price = price
         self.status = status
+        self.details_scraped = False
 
     def __str__(self):
         """
@@ -44,6 +45,40 @@ class CarItem:
             return True
         return False
 
+    def scrape_details(self, WebpageScraper):
+        """
+        Scrape the details from the webpage of a car item following the model
+        passed in the webpage model, and saves it as an instance attribute.
+        :param webpage_scraperl: CarItemWebpage class to scrap the details for CarItem listing.
+        :return: dictionary with details extracted from the CarItem webpage.
+        """
+        item_scraper = WebpageScraper(self.url)
+        details = {
+            'brand': item_scraper.brand,
+            'model': item_scraper.model,
+            'year': item_scraper.year,
+            'version': item_scraper.version,
+            'engine_displacement' : item_scraper.engine_displacement,
+            'odometer': item_scraper.odometer,
+            'transmission': item_scraper.transmission,
+            'body_style': item_scraper.body_style,
+            'fuel_economy': item_scraper.fuel_economy,
+            'city': item_scraper.city,
+            'cylinders': item_scraper.cylinders,
+            'number_of_gears': item_scraper.number_of_gears,
+            'horsepower': item_scraper.horsepower,
+            'doors': item_scraper.doors,
+            'cruise_control': item_scraper.cruise_control,
+            'distance_sensor': item_scraper.distance_sensor,
+            'start_button': item_scraper.start_button,
+            'number_of_airbags': item_scraper.number_of_airbags,
+            'abs': item_scraper.abs,
+            'passengers': item_scraper.passengers,
+            'interior_materials' : item_scraper.interior_materials,
+        }
+        self.item_details = details
+        self.details_scraped = True
+
     def to_database(self):
         """Save the item to the database"""
         try:
@@ -57,15 +92,30 @@ class CarItem:
         except IntegrityError:
             pass
 
-    def scrape_details(self, WebpageScraper):
-        """
-        Scrape the details from the webpage of a car item, following the model
-        passed in the webpage model.
-        :param webpage_scraperl: CarItemWebpage class to scrap the details for CarItem listing.
-        :return: dictionary with details extracted from the CarItem webpage.
-        """
-        item_scraper = WebpageScraper(self.url)
-        return item_scraper.get_details()
+    def details_to_database(self):
+        """Save the details of the car listing to the database"""
+        if not self.details_scraped:
+            raise Exception('Details not scraped yet.')
+        try:
+            DB.query(
+                """
+                INSERT INTO car_info 
+                    (id, brand, model, version, year, body_style, engine_displacement, odometer, 
+                     city, transmission, mileage, cylinders, horsepower, number_of_gears, doors,
+                     number_of_airbags, abs, passengers, interior_materials, start_button, cruise_control)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (self.car_id, self.item_details['brand'], self.item_details['model'], self.item_details['version'],
+                 self.item_details['year'], self.item_details['body_style'], self.item_details['engine_displacement'],
+                 self.item_details['odometer'], self.item_details['city'], self.item_details['transmission'],
+                 self.item_details['fuel_economy'], self.item_details['cylinders'], self.item_details['horsepower'],
+                 self.item_details['number_of_gears'], self.item_details['doors'], self.item_details['number_of_airbags'],
+                 self.item_details['abs'], self.item_details['passengers'], self.item_details['interior_materials'],
+                 self.item_details['start_button'], self.item_details['cruise_control'])
+            )
+        except IntegrityError:
+            pass
+
 
 
 class Scraper:
