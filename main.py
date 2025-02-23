@@ -17,7 +17,8 @@ if __name__ == '__main__':
                     continue
                 if item.status == 'Disponible':
                     item.scrape_details(KavakItemScraper)
-                item.details_to_database()
+                    item.details_to_database()
+                    print(item.item_details)
 
                 time_to_sleep = random.randrange(15, 25)
                 time.sleep(time_to_sleep)
