@@ -46,6 +46,11 @@ class Database:
         self.cursor.execute(sql, params)
         self.connection.commit()
 
+    def select_query(self, query):
+        res = self.cursor.execute(query)
+        return res.fetchall()
+
+
     @property
     def cursor(self):
         return self._cursor
