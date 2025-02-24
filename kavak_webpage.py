@@ -21,7 +21,10 @@ class KavakItemScraper(CarItemScraper):
     def item_id(self):
         """Id of the listed car item."""
         text = self._scrape_sibling('Stock ID')
-        return int(text)
+        try:
+            return int(text)
+        except ValueError:
+            return None
 
     @property
     def brand(self):
@@ -134,7 +137,7 @@ class KavakItemScraper(CarItemScraper):
     @property
     def cruise_control(self):
         """Wheather the listed car item has cruise control"""
-        text = self._scrape_sibling('Control de Crusero')
+        text = self._scrape_sibling('Control de Crucero')
         if text:
             if text.capitalize() in ['Sí', 'Si']:
                 return True
@@ -149,6 +152,7 @@ class KavakItemScraper(CarItemScraper):
             if text.capitalize() in ['Sí', 'Si']:
                 return True
             return False
+        return False
 
     @property
     def start_button(self):
@@ -199,6 +203,11 @@ class KavakItemScraper(CarItemScraper):
         if text:
             return int(text.replace(',', '').replace('$', ''))
 
+    @property
+    def price(self):
+        text = self._scrape_css_selector('span.amount_uki-amount__extraLarge__price__ZMOLc')
+        if text:
+            return int(text.replace(',', '').replace('$', ''))
 
 class KavakPageIterator(PageIterator):
     """
@@ -273,7 +282,7 @@ class KavakPageScraper(Scraper):
         :param item: BeautifulSoup tag containing the listing of a car item
         :return CarItem instance: Instance containing the information of the car listing.
         """
-        car_id = item.a.attrs['data-testid'].split('-')[-1]
+        car_id = int(item.a.attrs['data-testid'].split('-')[-1])
         url = item.a['href']
         try:
             price = int(item.find(

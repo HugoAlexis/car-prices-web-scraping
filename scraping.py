@@ -16,7 +16,8 @@ class CarItem:
     """
     def __init__(self, car_id, url, price, status='Disponible'):
         self.car_id = car_id
-        self.url = url
+        self.base_url = url
+        self.url = f'{self.base_url}?id={car_id}'
         self.price = price
         self.status = status
         self.details_scraped = False
@@ -82,8 +83,14 @@ class CarItem:
             'abs': item_scraper.abs,
             'passengers': item_scraper.passengers,
             'interior_materials' : item_scraper.interior_materials,
+            'price': item_scraper.price,
             'price_without_discount': item_scraper.price_without_discount,
         }
+
+        if self.car_id != item_scraper.item_id:
+            print(type(self.car_id), type(item_scraper.item_id))
+            raise IntegrityError(f'{self.car_id} - {item_scraper.item_id}: IDs do not match')
+
         self.item_details = details
         self.details_scraped = True
 
@@ -104,15 +111,15 @@ class CarItem:
         """Save the details of the car listing to the database"""
         if not self.details_scraped:
             raise Exception('Details not scraped yet.')
-        try:
-            DB.query(
+
+        DB.query(
                 """
                 INSERT INTO car_info 
                     (id, brand, model, version, year, body_style, engine_displacement, odometer, 
                      city, transmission, mileage, cylinders, horsepower, number_of_gears, doors,
                      number_of_airbags, abs, passengers, interior_materials, start_button, cruise_control, 
-                     price_without_discount)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     price, price_without_discount)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (self.car_id, self.item_details['brand'], self.item_details['model'], self.item_details['version'],
                  self.item_details['year'], self.item_details['body_style'], self.item_details['engine_displacement'],
@@ -121,10 +128,8 @@ class CarItem:
                  self.item_details['number_of_gears'], self.item_details['doors'], self.item_details['number_of_airbags'],
                  self.item_details['abs'], self.item_details['passengers'], self.item_details['interior_materials'],
                  self.item_details['start_button'], self.item_details['cruise_control'],
-                 self.item_details['price_without_discount'])
+                 self.item_details['price'], self.item_details['price_without_discount'])
             )
-        except IntegrityError:
-            pass
 
 
 

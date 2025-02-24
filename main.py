@@ -1,6 +1,11 @@
 import time
 import random
+from sqlite3 import IntegrityError
+
 from kavak_webpage import KavakPageIterator, KavakItemScraper
+
+def scrap_all_products():
+    pass
 
 if __name__ == '__main__':
     page_iterator = KavakPageIterator('https://www.kavak.com/mx/seminuevos')
@@ -10,16 +15,12 @@ if __name__ == '__main__':
         print('Found {} items'.format(len(page_items)))
 
         for i, item in enumerate(page_items):
-            if item:    # If the request is ok for the webpage of item
-                print(i, end=' - ')
-                item.to_database()
-                if item.exists_in_database:
-                    continue
-                if item.status == 'Disponible':
-                    item.scrape_details(KavakItemScraper)
-                    item.details_to_database()
-                    print(item.item_details)
+            print(i, end=' - ')
+            item.to_database()
+            if item.exists_in_database:
+                continue
 
-                time_to_sleep = random.randrange(15, 25)
-                time.sleep(time_to_sleep)
-        print('\n'*2)
+            item.scrape_details(KavakItemScraper)
+            item.details_to_database()
+
+            time.sleep(5)
