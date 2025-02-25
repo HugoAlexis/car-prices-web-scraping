@@ -23,4 +23,6 @@ if __name__ == '__main__':
             item.scrape_details(KavakItemScraper)
             item.details_to_database()
 
-            time.sleep(5)
+            time_to_sleep = random.randrange(18, 22)
+            time.sleep(time_to_sleep)
+        print('\n'*2)
