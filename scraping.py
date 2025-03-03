@@ -137,8 +137,14 @@ class Scraper:
     """
     Class with different static methods for safe scraping.
     """
-    def __init__(self):
-        self.soup = None # Each specific page should create a BeautifulSoup instance
+
+    def __init__(self, url):
+        self.url = url
+        self.req = requests.get(url)
+        self.req_ok = (self.req.status_code == 200)
+        if self.req_ok:
+            self.soup = BeautifulSoup(self.req.content, 'html.parser')
+
 
     def _scrape_sibling(self, re_pattern, tag_type='p'):
         """
@@ -192,52 +198,6 @@ class Scraper:
                     return all_tags[-1]
                 case 'all':
                     return all_tags
-
-
-class CarItemScraper(Scraper):
-    """
-    This class serves as a model for extracting car item details from specific websites.
-
-    Due to varying website structures, each website necessitates a unique CarItemWebpage
-    model.
-    Each desired data point (e.g., price, mileage) should be implemented as a
-    class attribute, returning the scraped value as a string. If a data point is not
-    found on the website, the attribute should return None. If an attribute is not implemented,
-    it will return None.
-    """
-    def __init__(self, url):
-        self.url = url
-        self.req = requests.get(url)
-        self.req_ok = (self.req.status_code == 200)
-        if self.req_ok:
-            self.soup = BeautifulSoup(self.req.content, 'html.parser')
-
-    def get_details(self):
-        return {
-            'brand': self.brand,
-            'model': self.model,
-            'year': self.year,
-            'engine_displacement': self.engine_displacement,
-            'version': self.version,
-            'body_style': self.body_style,
-            'fuel_economy': self.fuel_economy,
-            'city': self.city,
-            'cylinders': self.cylinders,
-            'number_of_gears': self.number_of_gears,
-            'horsepower': self.horsepower,
-            'doors': self.doors,
-            'cruise_control': self.cruise_control,
-            'distance_sensor': self.distance_sensor,
-            'start_button': self.start_button,
-            'number_of_airbags': self.number_of_airbags,
-            'abs': self.abs,
-            'passengers': self.passengers,
-            'interior_materials': self.interior_materials,
-        }
-
-    #def __getattr__(self, name):
-    #    print(name, ' is None? ')
-    #    return None
 
 
 class PageIterator(ABC):

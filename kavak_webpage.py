@@ -1,11 +1,11 @@
 import re
 import requests
 from bs4 import BeautifulSoup
-from scraping import Scraper, PageIterator, CarItem, CarItemScraper
+from scraping import Scraper, PageIterator, CarItem
 from requests.exceptions import RequestException
 
 
-class KavakItemScraper(CarItemScraper):
+class KavakItemScraper(Scraper):
     """
     Implementation for scraping and retrieving information about vehicles listed on Kavak.
     """
@@ -240,7 +240,7 @@ class KavakPageIterator(PageIterator):
             raise StopIteration
         if req.status_code != 200:
             raise StopIteration
-        return KavakPageScraper(req)
+        return KavakPageScraper(req.url)
 
 
 class KavakPageScraper(Scraper):
@@ -248,10 +248,6 @@ class KavakPageScraper(Scraper):
     A class providing the functionality to scrap a Kavak page of results
     (from pages of the website's pagination).
     """
-    def __init__(self, req):
-        super().__init__()
-        self.url = req.request.url
-        self.soup = BeautifulSoup(req.content, 'html.parser')
 
     def get_items(self):
         """
