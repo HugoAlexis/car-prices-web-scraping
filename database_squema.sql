@@ -1,9 +1,9 @@
-DROP TABLE IF EXISTS car_scrape_history CASCADE;
-DROP TABLE IF EXISTS car_info CASCADE;
-DROP TABLE IF EXISTS cars CASCADE;
-DROP TABLE IF EXISTS version_details CASCADE;
-DROP TABLE IF EXISTS versions CASCADE;
-DROP TABLE IF EXISTS scrapes CASCADE;
+--DROP TABLE IF EXISTS car_scrape_history CASCADE;
+--DROP TABLE IF EXISTS car_info CASCADE;
+--DROP TABLE IF EXISTS cars CASCADE;
+--DROP TABLE IF EXISTS version_details CASCADE;
+--DROP TABLE IF EXISTS versions CASCADE;
+--DROP TABLE IF EXISTS scrapes CASCADE;
 
 CREATE TABLE versions (
 	version_id SERIAL PRIMARY KEY,
@@ -62,9 +62,10 @@ CREATE TABLE cars (
 CREATE TABLE scrapes (
 	scrape_id SERIAL PRIMARY KEY,
 	datetime_start TIMESTAMP NOT NULL,
-	datetime_end TIMESTAMP NOT NULL,
-	finish_ok BOOLEAN,
-	error_type VARCHAR(35)
+	datetime_end TIMESTAMP,
+	finish_ok BOOLEAN DEFAULT FALSE,
+	error_type VARCHAR(35),
+    error_msg VARCHAR(55)
 );
 
 
@@ -79,5 +80,5 @@ CREATE TABLE car_info (
 	car_id BIGINT REFERENCES cars (car_id),
 	city VARCHAR(75),
 	odometer INT,
-	image_path TEXT(120)
+	image_path TEXT
 );

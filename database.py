@@ -45,9 +45,9 @@ class Database:
 
         # Initialize chosen database (postgres or sqlite)
         self._initialized = False
+        self.use_postgres = use_postgres
         if use_postgres:
             self._initialize_db_postgres()
-            self.use_postgres = True
         if not self._initialized:
             self._initialize_db_sqlite()
             self.use_postgres = False
@@ -95,6 +95,7 @@ class Database:
         except psycopg2.OperationalError:
             print('PostgreSQL connection failed. Using SQLite instead')
             return
+
         self._connection = psycopg2.connect(
             dbname=DATABASE_NAME,
             user=DB_USER,
@@ -104,9 +105,14 @@ class Database:
         )
         self._cursor = self._connection.cursor()
         self._initialized = True
+        if not already_exists:
+            self._create_schema()
 
 
     def query(self, sql, params):
+        if self.use_postgres:
+            sql = sql.replace('?', '%s')
+
         self.cursor.execute(sql, params)
         self.connection.commit()
 
@@ -136,6 +142,21 @@ class Database:
         self.cursor.execute(query, where_params or [])
         return self.cursor.fetchall()
 
+    def insert(self, table, values):
+        n_values = len(values)
+        columns = ', '.join(values.keys())
+        params = list(values.values())
+        sql = (
+            f'INSERT INTO {table}\n'
+            f'({columns})\nVALUES '
+            '(' + '?, ' * (n_values - 1) + '?)'
+        )
+
+        if self.use_postgres:
+            sql = sql.replace('?', '%s')
+
+        self.cursor.execute(sql, params)
+        self.connection.commit()
 
     @property
     def cursor(self):
@@ -145,14 +166,18 @@ class Database:
     def connection(self):
         return self._connection
 
-    def _create_schema(self):
+    def _create_schema(self, cursor=None):
         """
         If the database is being created, it executes the SQL code to create
         the database schema.
         :return:
         """
         print('Initializing Database!')
-        self.cursor.executescript(DATABASE_SCHEMA)
+        cursor = cursor or self.cursor
+        if self.use_postgres:
+            cursor.execute(DATABASE_SCHEMA)
+        else:
+            cursor.executescript(DATABASE_SCHEMA)
         self._connection.commit()
 
 
