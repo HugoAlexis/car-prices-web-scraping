@@ -34,12 +34,6 @@ class Scrape(ObjectModelMixin):
         return scrape_id
 
 
-    def dump(self):
-        db.insert(
-            table='scrapes',
-            values=self.__dict__
-        )
-
     def __enter__(self):
         return self
 
@@ -54,9 +48,60 @@ class Scrape(ObjectModelMixin):
         self.dump()
 
 
+class Version(ObjectModelMixin):
+    table_name = 'versions'
+    table_id = 'version_id'
+
+    def __init__(self, brand, model, version_name, year_prod, body_style, engine_displacement, transmission_type):
+        self.brand = brand.capitalize()
+        self.model = model.capitalize()
+        self.version_name = version_name.capitalize()
+        self.year_prod = year_prod
+        self.body_style = body_style.upper()
+        self.engine_displacement = engine_displacement
+        self.transmission_type = transmission_type.capitalize()
+        self.version_id = self._get_id()
+
+    def _get_id(self):
+        ids = db.select(
+            table='versions',
+            columns=['version_id'],
+            where_clause="""
+                brand = ? 
+                AND model = ? 
+                AND version_name = ?
+                AND year_prod = ? 
+                AND body_style = ?
+                AND engine_displacement = ?
+                AND transmission_type = ?
+            """,
+            where_params=(self.brand, self.model, self.version_name, self.year_prod,
+             self.body_style, self.engine_displacement, self.transmission_type)
+        )
+        if ids:
+            id = ids[0][0]
+            self._already_exists = True
+        else:
+            self._already_exists = False
+            all_ids = db.select(
+                table='versions',
+                columns=['version_id'],
+            )
+            if all_ids:
+                id = max(all_ids, key=lambda x: x[0])[0] + 1
+            else:
+                id = 0
+        return id
+
+    def dump(self):
+        if not self._already_exists:
+            super().dump()
+
+
+
 if __name__ == '__main__':
     db = Database(use_postgres=True)
-    for i in range(0):
+    for i in range(5):
         try:
             with Scrape() as scrape:
                 time.sleep(2)
