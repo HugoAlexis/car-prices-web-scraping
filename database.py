@@ -139,10 +139,19 @@ class Database:
         if where_clause:
             query += f" WHERE {where_clause}"
 
+        if self.use_postgres:
+            query = query.replace('?', '%s')
         self.cursor.execute(query, where_params or [])
         return self.cursor.fetchall()
 
-    def insert(self, table, values):
+    def insert(self, table, values, ignore_protected=True):
+        if ignore_protected:
+            values = values.copy()
+            key_values = list(values.keys())
+            for key in key_values:
+                if key.startswith('_'):
+                    values.pop(key)
+
         n_values = len(values)
         columns = ', '.join(values.keys())
         params = list(values.values())
@@ -157,6 +166,28 @@ class Database:
 
         self.cursor.execute(sql, params)
         self.connection.commit()
+
+    def update(self, table, values, ignore_protected=True, where_clause=None, where_params=None):
+        if ignore_protected:
+            values = values.copy()
+            key_values = list(values.keys())
+            for key in key_values:
+                if key.startswith('_'):
+                    values.pop(key)
+
+        sets_clauses = ', '.join([f'{col} = \'{value}\'' for col, value in values.items()])
+
+        sql = (
+            f'UPDATE {table}\n' 
+            f'SET {sets_clauses}\n'
+            f'WHERE {where_clause}'
+        )
+
+        if self.use_postgres:
+            sql = sql.replace('?', '%s')
+
+        print(sql)
+        self.cursor.execute(sql, where_params or [])
 
     @property
     def cursor(self):
@@ -181,6 +212,6 @@ class Database:
         self._connection.commit()
 
 
-if __name__ == '__main__':
-    db = Database(use_postgres=True)
+
+db = Database(use_postgres=True)
 
