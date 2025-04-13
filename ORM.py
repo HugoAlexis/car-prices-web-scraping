@@ -1,7 +1,20 @@
 import time
 from database import Database
 
-class Scrape:
+db = Database(use_postgres=True)
+
+
+class ObjectModelMixin:
+    def dump(self):
+        db.insert(
+            table=self.table_name,
+            values=self.__dict__
+        )
+
+class Scrape(ObjectModelMixin):
+    table_name = 'scrapes'
+    table_id = 'scrape_id'
+
     def __init__(self):
         self.scrape_id = self._get_id()
         self.datetime_start = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
