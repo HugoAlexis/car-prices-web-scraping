@@ -1,11 +1,10 @@
 import time
+from dotenv import load_dotenv
+from database import db
+import os
 
-from setuptools.command.build_ext import if_dl
-
-from database import Database
-
-db = Database(use_postgres=True)
-
+load_dotenv('.env')
+WEBSITE1 = os.getenv('WEBSITE1')
 
 class ObjectModelMixin:
     def dump(self):
@@ -38,6 +37,7 @@ class Scrape(ObjectModelMixin):
 
 
     def __enter__(self):
+        self.dump()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -48,7 +48,15 @@ class Scrape(ObjectModelMixin):
             self.finish_ok = False
             self.error_type = exc_type.__name__
             self.error_msg = str(exc_val)
-        self.dump()
+        self.dump_update()
+
+    def dump_update(self):
+        db.update(
+            table=self.table_name,
+            values=self.__dict__,
+            where_clause='scrape_id = ?',
+            where_params=[self.scrape_id]
+        )
 
 
 class Version(ObjectModelMixin):
@@ -166,6 +174,120 @@ class VersionDetails(ObjectModelMixin):
         self.width_meters = int(width_meters) if width_meters else None
         self.weight_kg = int(weigth_kg) if weigth_kg else None
 
+
+
+class Car(ObjectModelMixin):
+    table_name = 'cars'
+    table_id = 'car_id'
+    def __init__(
+            self,
+            identifier,
+            version_object,
+            url,
+            image_url,
+            report_url,
+            website=WEBSITE1,
+        ):
+
+        self._version_object = version_object
+        self.url = url
+        self.image_url = image_url
+        self.report_url = report_url
+        self.website = website
+        self.identifier = identifier
+        self.car_id = self._get_id()
+        self.version_id = version_object.version_id
+
+    def _get_id(self):
+        car_id = db.select(
+            table=self.table_name,
+            columns=[self.table_id],
+            where_clause="""
+                identifier = ? AND website = ?
+            """,
+            where_params=(self.identifier, self.website)
+        )
+        if car_id:
+            self._already_exists = True
+            return car_id[0][0]
+        else:
+            self._already_exists = False
+            all_ids = db.select(
+                table=self.table_name,
+                columns=[self.table_id]
+            )
+            if all_ids:
+                return all_ids[0][0] + 1
+            else:
+                return 0
+
+    def dump(self):
+        if not self._already_exists:
+            super().dump()
+
+
+class CarInfo(ObjectModelMixin):
+    table_name = 'car_info'
+    table_id = 'car_id'
+
+    def __init__(
+            self,
+            car_object,
+            city=None,
+            odometer=None,
+        ):
+        self._car_object = car_object
+        self.car_id = car_object.car_id
+        self.city = city
+        self.odometer = odometer
+        image_format = self._car_object.image_url.split('.')[-1]
+        report_format = self._car_object.report_url.split('.')[-1]
+        self.image_path = os.path.join(
+            'data',
+            'images',
+            self._car_object.website,
+            f'{self._car_object.identifier}.{image_format}'
+        )
+        self.report_path = os.path.join(
+            'data',
+            'reports',
+            self._car_object.website,
+            f'{self._car_object.identifier}.{report_format}'
+        )
+
+    def dump(self):
+        id = db.select(
+            table=self.table_name,
+            columns=[self.table_id],
+            where_clause="""
+                car_id = ?
+            """,
+            where_params=(self.car_id,)
+        )
+        if id:
+            return
+        else:
+            super().dump()
+
+
+class ScrapeHistory(ObjectModelMixin):
+    table_name = 'scrape_history'
+
+    def __init__(
+            self,
+            car_object,
+            scrape_object,
+            labels
+        ):
+        self._car_object = car_object
+        self._scrape_object = scrape_object
+        self.car_id = car_object.car_id
+        self.scrape_id = scrape_object.scrape_id
+        self.labels = labels
+
+
+
+
 version = Version(
     'Chevrolet',
     'Aveo',
@@ -189,12 +311,33 @@ version_details = VersionDetails(
     rim_material='Aluminium'
 )
 
-version.dump()
-version_details.dump()
+car = Car(
+    identifier=1234,
+    version_object=version,
+    url='http://example.com',
+    image_url='http://example.com/image.jpg',
+    report_url='http://example.com/report.pdf',
+)
 
+car_info = CarInfo(
+    car_object=car,
+    city='Austin',
+    odometer=100000
+)
+
+with Scrape() as scrape:
+    version.dump()
+    version_details.dump()
+    car.dump()
+    car_info.dump()
+    scrape_history = ScrapeHistory(
+        car_object=car,
+        scrape_object=scrape,
+        labels='Outlet, Otro'
+    )
+    scrape_history.dump()
 
 if __name__ == '__main__':
-    db = Database(use_postgres=True)
     for i in range(5):
         try:
             with Scrape() as scrape:
