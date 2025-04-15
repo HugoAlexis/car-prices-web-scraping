@@ -2,135 +2,6 @@ from bs4 import BeautifulSoup
 from abc import ABC, abstractmethod
 import re
 import requests
-from database import Database
-from sqlite3 import IntegrityError
-
-
-#DB = Database()
-
-
-class CarItem:
-    """
-    This class models a car item, providing methods to scrape its details
-    from a listing and store the extracted information in a database."
-    """
-    def __init__(self, car_id, url, price, status='Disponible'):
-        self.car_id = car_id
-        self.base_url = url
-        self.url = f'{self.base_url}?id={car_id}'
-        self.price = price
-        self.status = status
-        self.details_scraped = False
-
-    def __str__(self):
-        """
-        String representation of a car item.
-        :return:
-        """
-        return (
-            f'Car ID: {self.car_id} [{self.status}]'
-            f'price= ${self.price:,}\n'
-            f'URL = {self.url}'
-        )
-
-    def __bool__(self):
-        """
-        Returns true if the no-null attributes of the car item are available.
-        :return: Boolean
-        """
-        conditions = [
-            bool(self.car_id),
-            bool(self.url)
-        ]
-        if all(conditions):
-            return True
-        return False
-
-    @property
-    def exists_in_database(self):
-        results = DB.select_query(f'SELECT * FROM car_info WHERE id = {self.car_id}')
-        if results:
-            return True
-        return False
-
-    def scrape_details(self, WebpageScraper):
-        """
-        Scrape the details from the webpage of a car item following the model
-        passed in the webpage model, and saves it as an instance attribute.
-        :param webpage_scraperl: CarItemWebpage class to scrap the details for CarItem listing.
-        :return: dictionary with details extracted from the CarItem webpage.
-        """
-        item_scraper = WebpageScraper(self.url)
-        details = {
-            'brand': item_scraper.brand,
-            'model': item_scraper.model,
-            'year': item_scraper.year,
-            'version': item_scraper.version,
-            'engine_displacement' : item_scraper.engine_displacement,
-            'odometer': item_scraper.odometer,
-            'transmission': item_scraper.transmission,
-            'body_style': item_scraper.body_style,
-            'fuel_economy': item_scraper.fuel_economy,
-            'city': item_scraper.city,
-            'cylinders': item_scraper.cylinders,
-            'number_of_gears': item_scraper.number_of_gears,
-            'horsepower': item_scraper.horsepower,
-            'doors': item_scraper.doors,
-            'cruise_control': item_scraper.cruise_control,
-            'distance_sensor': item_scraper.distance_sensor,
-            'start_button': item_scraper.start_button,
-            'number_of_airbags': item_scraper.number_of_airbags,
-            'abs': item_scraper.abs,
-            'passengers': item_scraper.passengers,
-            'interior_materials' : item_scraper.interior_materials,
-            'price': item_scraper.price,
-            'price_without_discount': item_scraper.price_without_discount,
-        }
-
-        if self.car_id != item_scraper.item_id:
-            print(type(self.car_id), type(item_scraper.item_id))
-            raise IntegrityError(f'{self.car_id} - {item_scraper.item_id}: IDs do not match')
-
-        self.item_details = details
-        self.details_scraped = True
-
-    def to_database(self):
-        """Save the item to the database"""
-        try:
-            DB.query(
-                """
-                    INSERT INTO cars (id, url, price, status)
-                    VALUES (?, ?, ?, ?)
-                """,
-                params=(self.car_id, self.url, self.price, self.status)
-            )
-        except IntegrityError:
-            pass
-
-    def details_to_database(self):
-        """Save the details of the car listing to the database"""
-        if not self.details_scraped:
-            raise Exception('Details not scraped yet.')
-
-        DB.query(
-                """
-                INSERT INTO car_info 
-                    (id, brand, model, version, year, body_style, engine_displacement, odometer, 
-                     city, transmission, mileage, cylinders, horsepower, number_of_gears, doors,
-                     number_of_airbags, abs, passengers, interior_materials, start_button, cruise_control, 
-                     price, price_without_discount)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (self.car_id, self.item_details['brand'], self.item_details['model'], self.item_details['version'],
-                 self.item_details['year'], self.item_details['body_style'], self.item_details['engine_displacement'],
-                 self.item_details['odometer'], self.item_details['city'], self.item_details['transmission'],
-                 self.item_details['fuel_economy'], self.item_details['cylinders'], self.item_details['horsepower'],
-                 self.item_details['number_of_gears'], self.item_details['doors'], self.item_details['number_of_airbags'],
-                 self.item_details['abs'], self.item_details['passengers'], self.item_details['interior_materials'],
-                 self.item_details['start_button'], self.item_details['cruise_control'],
-                 self.item_details['price'], self.item_details['price_without_discount'])
-            )
-
 
 
 class Scraper:
@@ -215,7 +86,7 @@ class Scraper:
                     html_text = self.soup.select(outer_tag)[0].text
                 else:
                     html_text = self.soup.text
-                print(html_text)
+
                 matches = re.findall(pattern, html_text, flags)
 
                 if not matches:
@@ -298,7 +169,7 @@ class Scraper:
         tag_element = self.soup.find(tag_type, string=re.compile(re_pattern))
         if not tag_element:
             return None
-        sibling_element = tag_element.next_sibling or tag_element.previous_sibling
+        sibling_element = tag_element.find_next_sibling() or tag_element.find_next_sibling()
         if sibling_element:
             return sibling_element.text
         return None
@@ -365,7 +236,5 @@ class PageIterator(ABC):
 
 
 if __name__ == '__main__':
-    scraper = Scraper(url='https://www.kavak.com/mx/usado/volkswagen-golf-14_comforline_mt_app_connect-hatchback-2016')
-    if scraper.req_ok:
-        print(scraper.carroceria.previous_sibling.text)
+    pass
 
