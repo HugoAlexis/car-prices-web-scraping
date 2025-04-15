@@ -139,9 +139,6 @@ class VersionDetails(ObjectModelMixin):
             has_gps=None,
             has_sunroof=None,
             has_androidauto=None,
-            length_meters=None,
-            height_meters=None,
-            width_meters=None,
             weigth_kg=None
         ):
         self._version_object = version_object
