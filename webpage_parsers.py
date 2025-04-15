@@ -1,7 +1,17 @@
 from scraping import Scraper
-
+import re
 
 class KavakItem(Scraper):
+
+    @property
+    def website(self): return 'kavak'
+
+    @property
+    def identifier(self): return self._scrape_sibling('Stock ID')
+
+    @Scraper.re_extract_text(outer_tag='div.desktop_car-detail__start__BToHy')
+    def mileage(self): return r'(\d+)\s?Consumo combinado'
+
     @Scraper.css_extract_text()
     def original_price(self): return 'span.price_amount__dRxZ8'
 
@@ -18,7 +28,7 @@ class KavakItem(Scraper):
     def year_prod(self): return 'ul.breadcrumb_breadcrumb__nPwIW li:nth-child(4) a'
 
     @Scraper.css_extract_text()
-    def version(self): return 'ul.breadcrumb_breadcrumb__nPwIW li:nth-child(5) span'
+    def version_name(self): return 'ul.breadcrumb_breadcrumb__nPwIW li:nth-child(5) span'
 
     @Scraper.re_extract_text(outer_tag='div.desktop_car-detail__start__BToHy')
     def engine_displacement(self): return '(\d+(?:\.\d+)?)\s?Litros'
@@ -64,9 +74,6 @@ class KavakItem(Scraper):
 
     @Scraper.re_extract_text(outer_tag='div.desktop_car-detail__start__BToHy')
     def rim_material(self): return r'([A-ZÁÉÍÓÚ][a-záéíóú]+)\s?Tipo de Rin'
-
-    @Scraper.re_extract_text(outer_tag='div.desktop_car-detail__start__BToHy')
-    def body_style(self): return r'([A-ZÁÉÍÓÚ][a-záéíóú]+)\s?Tipo de Carrocer.a'
 
     @Scraper.re_extract_text(outer_tag='div.desktop_car-detail__start__BToHy')
     def has_startstop_button(self): return r'([A-ZÁÉÍÓÚa-záéíóú]{2})Start.Stop'
@@ -117,19 +124,24 @@ class KavakItem(Scraper):
     @Scraper.re_extract_text(outer_tag='div.desktop_car-detail__start__BToHy')
     def has_androidauto(self): return r'([A-ZÁÉÍÓÚa-záéíóú]{2})\s?Apple CarPlay'
 
+    @Scraper.re_extract_text(outer_tag='div.desktop_car-detail__start__BToHy')
+    def body_style(self): return r'[^A-Z]([A-Z][a-zA-Z]*)Tipo de .arrocer.a'
+
+    @property
+    def body_style(self): return self._scrape_sibling('Tipo de Carrocería')
 
     @Scraper.re_extract_text(outer_tag='aside.buy-box_wrapper__jCjj4 ')
     def transmission_type(self): return r'Transmisión\s?(Automático|Manual)'
 
-
-
     @property
-    def url_image(self):
+    def image_url(self):
         img_tag = self.soup.select('div.keen-slider__slide img')
         if img_tag:
             return  img_tag[0].attrs['src']
         return None
 
+    @property
+    def report_url(self): return None
 
 class AutocosmosItem(Scraper):
 
