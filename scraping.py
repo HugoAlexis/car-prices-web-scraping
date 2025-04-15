@@ -169,7 +169,7 @@ class Scraper:
         tag_element = self.soup.find(tag_type, string=re.compile(re_pattern))
         if not tag_element:
             return None
-        sibling_element = tag_element.find_next_sibling() or tag_element.find_next_sibling()
+        sibling_element = tag_element.find_next_sibling() or tag_element.find_previous_sibling()
         if sibling_element:
             return sibling_element.text
         return None
