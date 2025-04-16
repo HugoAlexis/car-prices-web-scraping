@@ -1,28 +1,38 @@
 import time
 import random
-from sqlite3 import IntegrityError
+from webpage_parsers import KavakItem
+from kavak_webpage import KavakPageIterator
+import ORM
+from database import Database
 
-from kavak_webpage import KavakPageIterator, KavakItemScraper
 
-def scrap_all_products():
-    pass
+class Main:
+    def __init__(self):
+        self.DB = Database(use_postgres=True)
+        self.PageIterator = KavakPageIterator('https://www.kavak.com/mx/seminuevos')
+
+    def run(self):
+        with ORM.Scrape() as scrape:
+            for page in self.PageIterator:
+                page_urls = page.url_all_items()
+                for id, url in page_urls.items():
+                    item_parser = KavakItem(url + f'?id={id}')
+
+                    car_version = ORM.Version.from_parser(item_parser)
+                    car = ORM.Car.from_parser(item_parser, version_object=car_version)
+                    version_details = ORM.VersionDetails.from_parser(item_parser, version_object=car_version)
+                    scrape_history = ORM.ScrapeHistory(car_object=car, scrape_object=scrape, labels='')
+
+                    car_version.dump()
+                    car.dump()
+                    version_details.dump()
+                    scrape_history.dump()
+                    time.sleep(20)
+
+
+
+
 
 if __name__ == '__main__':
-    page_iterator = KavakPageIterator('https://www.kavak.com/mx/seminuevos')
-    for page in page_iterator:
-        page_items = page.get_items()
-        print(page_iterator.url)
-        print('Found {} items'.format(len(page_items)))
-
-        for i, item in enumerate(page_items):
-            print(i, end=' - ')
-            item.to_database()
-            if item.exists_in_database:
-                continue
-
-            item.scrape_details(KavakItemScraper)
-            item.details_to_database()
-
-            time_to_sleep = random.randrange(18, 22)
-            time.sleep(time_to_sleep)
-        print('\n'*2)
+    main = Main()
+    main.run()
