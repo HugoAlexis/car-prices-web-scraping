@@ -120,7 +120,7 @@ class Database:
         res = self.cursor.execute(query)
         return res.fetchall()
 
-    def select(self, table, columns='*', where_clause=None, where_params=None):
+    def select(self, table, columns='*', where_clause=None, where_params=None, verbose=False):
         """
            Executes a safe SELECT query on the database.
 
@@ -141,6 +141,9 @@ class Database:
 
         if self.use_postgres:
             query = query.replace('?', '%s')
+
+        if verbose:
+            print(query)
         self.cursor.execute(query, where_params or [])
         return self.cursor.fetchall()
 
@@ -164,8 +167,7 @@ class Database:
         if self.use_postgres:
             sql = sql.replace('?', '%s')
 
-        self.cursor.execute(sql, params)
-        self.connection.commit()
+        self.query(sql, params)
 
     def update(self, table, values, ignore_protected=True, where_clause=None, where_params=None):
         if ignore_protected:
@@ -186,8 +188,7 @@ class Database:
         if self.use_postgres:
             sql = sql.replace('?', '%s')
 
-        print(sql)
-        self.cursor.execute(sql, where_params or [])
+        self.query(sql, where_params or [])
 
     @property
     def cursor(self):

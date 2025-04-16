@@ -7,11 +7,60 @@ load_dotenv('.env')
 WEBSITE1 = os.getenv('WEBSITE1')
 
 class ObjectModelMixin:
+    table_name = ''
+    table_columns = []
+
+    """
+    A base mixin class for Object-Relational Mapping (ORM) models.
+
+    Functionality:
+        - Insert (`dump`) and update (`update`) data in a database.
+        - Create ORM instances from parser objects via `from_parser`.
+
+    Constraints:
+        - All database table columns must match an instance attribute or @property.
+        - All extra instance attributes must start with _ or __ to be ignored by ORM methods.
+
+    Expected in subclasses:
+        - `table_name`: Name of the table (str).
+        - `table_columns`: List of valid column names (str) for the table.
+
+    Methods:
+        - dump(): Inserts the object into the database.
+        - update(): Updates the existing record using the primary key.
+        - from_parser(): Factory method to create an ORM instance from a parser object.
+    """
+
     def dump(self):
+        """
+           Inserts the object into the database.
+
+           This method uses the `table_name` attribute to determine the target table
+           and inserts the object's attributes (`__dict__`) as column values.
+        """
         db.insert(
             table=self.table_name,
             values=self.__dict__
         )
+
+    @classmethod
+    def from_parser(cls, parser_obj, **kwargs):
+        """
+        Create an instance of the ORM class from a parser object.
+
+        Args:
+            parser_obj: An object with @property accessros for attributes matching
+                        the expected `table_columns`
+        :return:
+            An instance of the ORM class with fields populated from the parser.
+        """
+
+        for field in cls.table_columns:
+            kwargs[field] = getattr(parser_obj, field)
+
+        return cls(**kwargs)
+
+
 
 class Scrape(ObjectModelMixin):
     table_name = 'scrapes'
@@ -62,6 +111,10 @@ class Scrape(ObjectModelMixin):
 class Version(ObjectModelMixin):
     table_name = 'versions'
     table_id = 'version_id'
+    table_columns = [
+        'brand', 'model', 'version_name', 'year_prod', 'body_style', 'engine_displacement',
+        'transmission_type'
+    ]
 
     def __init__(self, brand, model, version_name, year_prod, body_style, engine_displacement, transmission_type):
         self.brand = brand.capitalize()
@@ -112,6 +165,14 @@ class Version(ObjectModelMixin):
 class VersionDetails(ObjectModelMixin):
     table_name = 'version_details'
     table_id = 'version_id'
+    table_columns = [
+        'mileage', 'cylinders', 'num_of_gears', 'fuel_range', 'engine_type',
+        'fuel_type', 'horsepower', 'rim_inches', 'rim_material', 'num_of_doors',
+        'num_of_passengers', 'num_of_airbags', 'has_abs', 'interior_materials',
+        'has_start_button', 'has_cruise_control', 'has_distance_sensor', 'has_bluetooth',
+        'has_rain_sensor', 'has_automatic_emergency_breaking', 'has_gps', 'has_sunroof',
+        'has_android_auto', 'weight_kg'
+    ]
 
     def __init__(
             self,
@@ -139,11 +200,12 @@ class VersionDetails(ObjectModelMixin):
             has_gps=None,
             has_sunroof=None,
             has_androidauto=None,
-            weigth_kg=None
+            weigth_kg=None,
+            **kwargs
         ):
         self._version_object = version_object
-        self.version_id = version_object.version_id
-        self.mileage = round(mileage, 1) if mileage else None
+        self.version_id = self._get_id(version_object.version_id)
+        self.mileage = round(float(mileage), 1) if mileage else None
         self.cylinders = int(cylinders) if cylinders else None
         self.num_of_gears = int(num_of_gears) if num_of_gears else None
         self.fuel_range = int(fuel_range) if fuel_range else None
@@ -155,41 +217,62 @@ class VersionDetails(ObjectModelMixin):
         self.num_of_doors = int(num_of_doors) if num_of_doors else None
         self.num_of_passengers = int(num_of_passengers) if num_of_passengers else None
         self.num_of_airbags = int(num_of_airbags) if num_of_airbags else None
-        self.has_abs = bool(has_abs) if has_abs else None
+        self.has_abs = bool(has_abs) if has_abs else False
         self.interior_materials = interior_materials.capitalize() if interior_materials else None
-        self.has_start_button = bool(has_start_button) if has_start_button else None
-        self.has_cruise_control = bool(has_cruise_control) if has_cruise_control else None
-        self.has_distance_sensor = bool(has_distance_sensor) if has_distance_sensor else None
-        self.has_bluetooth = bool(has_bluetooth) if has_bluetooth else None
-        self.has_rain_sensor = bool(has_rain_sensor) if has_rain_sensor else None
-        self.has_automatic_emergency_breaking = bool(has_automatic_emergency_breaking) if has_automatic_emergency_breaking else None
-        self.has_gps = bool(has_gps) if has_gps else None
-        self.has_sunroof = bool(has_sunroof) if has_sunroof else None
-        self.has_androidauto = bool(has_androidauto) if has_androidauto else None
-        self.length_meters = int(length_meters) if length_meters else None
-        self.height_meters = int(height_meters) if height_meters else None
-        self.width_meters = int(width_meters) if width_meters else None
+        self.has_start_button = bool(has_start_button) if has_start_button else False
+        self.has_cruise_control = bool(has_cruise_control) if has_cruise_control else False
+        self.has_distance_sensor = bool(has_distance_sensor) if has_distance_sensor else False
+        self.has_bluetooth = bool(has_bluetooth) if has_bluetooth else False
+        self.has_rain_sensor = bool(has_rain_sensor) if has_rain_sensor else False
+        self.has_automatic_emergency_breaking = bool(has_automatic_emergency_breaking) if has_automatic_emergency_breaking else False
+        self.has_gps = bool(has_gps) if has_gps else False
+        self.has_sunroof = bool(has_sunroof) if has_sunroof else False
+        self.has_androidauto = bool(has_androidauto) if has_androidauto else False
         self.weight_kg = int(weigth_kg) if weigth_kg else None
+
+    def _get_id(self, version_id):
+        ids = db.select(
+            table=self.table_name,
+            columns=['version_id'],
+            where_clause="""
+                version_id = ?
+            """,
+            where_params=(version_id,)
+        )
+        if ids:
+            self._already_exists = True
+        else:
+            self._already_exists = False
+
+        return version_id
+
+    def dump(self):
+        if self._already_exists:
+            return
+        super().dump()
 
 
 
 class Car(ObjectModelMixin):
     table_name = 'cars'
     table_id = 'car_id'
+    table_columns = [
+        'url', 'image_url', 'report_url', 'website', 'identifier', 'car_id', 'version_id'
+    ]
+
     def __init__(
             self,
             identifier,
             version_object,
             url,
             image_url,
-            report_url,
             website=WEBSITE1,
+            **kwargs,
         ):
 
         self._version_object = version_object
         self.url = url
         self.image_url = image_url
-        self.report_url = report_url
         self.website = website
         self.identifier = identifier
         self.car_id = self._get_id()
@@ -202,8 +285,9 @@ class Car(ObjectModelMixin):
             where_clause="""
                 identifier = ? AND website = ?
             """,
-            where_params=(self.identifier, self.website)
+            where_params=(self.identifier, self.website),
         )
+
         if car_id:
             self._already_exists = True
             return car_id[0][0]
@@ -211,10 +295,11 @@ class Car(ObjectModelMixin):
             self._already_exists = False
             all_ids = db.select(
                 table=self.table_name,
-                columns=[self.table_id]
+                columns=[self.table_id],
             )
+
             if all_ids:
-                return all_ids[0][0] + 1
+                return max(all_ids, key=lambda x: x[0])[0] + 1
             else:
                 return 0
 

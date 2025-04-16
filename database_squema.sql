@@ -54,9 +54,8 @@ CREATE TABLE cars (
 	car_id SERIAL PRIMARY KEY,
 	identifier SERIAL NOT NULL,
 	website VARCHAR(25) NOT NULL,
-	url VARCHAR(150) NOT NULL,
-	image_url VARCHAR(150) NOT NULL,
-	report_url VARCHAR(150) NOT NULL,
+	url VARCHAR(250) NOT NULL,
+	image_url VARCHAR(250) NOT NULL,
 	version_id BIGINT REFERENCES versions (version_id),
     CONSTRAINT unique_identifier_website UNIQUE (identifier, website)
 );
