@@ -58,10 +58,10 @@ class KavakItem(Scraper):
     def num_of_gears(self): return r'(\d+)\s?N.mero de Velocidades'
 
     @Scraper.re_extract_text(outer_tag='div.desktop_car-detail__start__BToHy')
-    def fuel_type(self): return r'([A-Z]{1}[a-z]+)\s?Combustible'
+    def fuel_type(self): return r'([A-ZÁÉÍÓÚ]{1}[a-záéíóú]+)\s?Combustible'
 
     @Scraper.re_extract_text(outer_tag='div.desktop_car-detail__start__BToHy')
-    def engine_type(self): return r'([A-ZÁÉÍÓÚ][a-záéíóú]+)\s?Tipo de motor'
+    def engine_type(self): return r'([A-ZÁÉÍÓÚ]+[a-záéíóú]*)\s?Tipo de motor'
 
     @Scraper.re_extract_text(outer_tag='div.desktop_car-detail__start__BToHy')
     def num_of_doors(self): return r'(\d+)\s?N.mero de Puertas'
@@ -113,7 +113,7 @@ class KavakItem(Scraper):
     def num_of_passengers(self): return r'(\d+)\s?N.mero de Pasajeros'
 
     @Scraper.re_extract_text(outer_tag='div.desktop_car-detail__start__BToHy')
-    def interior_materials(self): return r'([A-ZÁÉÍÓÚ][a-záéíóú]+)\sMaterial Asientos?'
+    def interior_materials(self): return r'([A-ZÁÉÍÓÚ][a-záéíóú]+)\s?Material Asientos'
 
     @Scraper.re_extract_text(outer_tag='div.desktop_car-detail__start__BToHy')
     def has_touchscreen(self): return r'([A-ZÁÉÍÓÚa-záéíóú]{2})\s?Pantalla T.ctil'

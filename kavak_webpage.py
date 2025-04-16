@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 from scraping import Scraper, PageIterator
-from webpage_models import KavakItem
+from webpage_parsers import KavakItem
 import time
 
 
