@@ -42,9 +42,6 @@ CREATE TABLE version_details (
 	has_sunroof BOOLEAN DEFAULT FALSE,
     has_carplay BOOLEAN DEFAULT FALSE,
     has_androidauto BOOLEAN DEFAULT FALSE,
-	length_meters SMALLINT,
-	height_meters SMALLINT,
-	width_meters SMALLINT,
 	weight_kg SMALLINT
 );
 

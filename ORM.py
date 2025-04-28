@@ -171,7 +171,7 @@ class VersionDetails(ObjectModelMixin):
         'num_of_passengers', 'num_of_airbags', 'has_abs', 'interior_materials',
         'has_start_button', 'has_cruise_control', 'has_distance_sensor', 'has_bluetooth',
         'has_rain_sensor', 'has_automatic_emergency_breaking', 'has_gps', 'has_sunroof',
-        'has_android_auto', 'weight_kg'
+        'has_androidauto', 'weight_kg'
     ]
 
     def __init__(
@@ -200,7 +200,7 @@ class VersionDetails(ObjectModelMixin):
             has_gps=None,
             has_sunroof=None,
             has_androidauto=None,
-            weigth_kg=None,
+            weight_kg=None,
             **kwargs
         ):
         self._version_object = version_object
@@ -228,7 +228,9 @@ class VersionDetails(ObjectModelMixin):
         self.has_gps = bool(has_gps) if has_gps else False
         self.has_sunroof = bool(has_sunroof) if has_sunroof else False
         self.has_androidauto = bool(has_androidauto) if has_androidauto else False
-        self.weight_kg = int(weigth_kg) if weigth_kg else None
+        self.weight_kg = int(weight_kg) if weight_kg else None
+
+        print(self.has_androidauto)
 
     def _get_id(self, version_id):
         ids = db.select(

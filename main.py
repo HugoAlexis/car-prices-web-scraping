@@ -17,7 +17,6 @@ class Main:
                 page_urls = page.url_all_items()
                 for id, url in page_urls.items():
                     item_parser = KavakItem(url + f'?id={id}')
-
                     car_version = ORM.Version.from_parser(item_parser)
                     car = ORM.Car.from_parser(item_parser, version_object=car_version)
                     version_details = ORM.VersionDetails.from_parser(item_parser, version_object=car_version)
@@ -27,7 +26,7 @@ class Main:
                     car.dump()
                     version_details.dump()
                     scrape_history.dump()
-                    time.sleep(20)
+                    #time.sleep(5)
 
 
 
