@@ -13,7 +13,7 @@ CREATE TABLE versions (
 	year_prod SMALLINT NOT NULL,
 	body_style VARCHAR(25) NOT NULL,
 	engine_displacement DECIMAL(3, 1) NOT NULL,
-	transmission_type VARCHAR(25) NOT NULL
+	transmission_type VARCHAR(25)
 );
 
 CREATE TABLE version_details (
@@ -55,7 +55,7 @@ CREATE TABLE cars (
 	identifier SERIAL NOT NULL,
 	website VARCHAR(25) NOT NULL,
 	url VARCHAR(250) NOT NULL,
-	image_url VARCHAR(250) NOT NULL,
+	image_url VARCHAR(250),
 	version_id BIGINT REFERENCES versions (version_id),
     CONSTRAINT unique_identifier_website UNIQUE (identifier, website)
 );
