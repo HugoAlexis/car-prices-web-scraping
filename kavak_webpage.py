@@ -47,20 +47,23 @@ class KavakPageScraper(Scraper):
     (from pages of the website's pagination).
     """
 
+    def __init__(self, url):
+        super().__init__(url)
+        self.div_items = self._scrape_css_selector(
+            '#main-content .results_results__container__tcF4_',
+            as_string=False,
+            found_many='first',
+        )
+
     def url_all_items(self):
         """
         Return a list of CarIte instances found on the pagination page.
 
         :return: list of CarItem instances
         """
-        all_items = self._scrape_css_selector(
-            '#main-content .results_results__container__tcF4_',
-            as_string=False,
-            found_many='first',
-        ).children
 
         dict_all_items = {}
-        for item in all_items:
+        for item in self.div_items.children:
             if 'Vende tu auto' in item.text:
                 continue
             url = item.a.attrs['href']
@@ -68,6 +71,20 @@ class KavakPageScraper(Scraper):
             dict_all_items[id] = url
         return dict_all_items
 
+    def labels_all_items(self):
+        dict_all_items = {}
+        for item in self.div_items.children:
+            if 'Vende tu auto' in item.text:
+                continue
+            itme_id = item.a.attrs['data-testid'].split('-')[-1]
+            div_labels = item.img.find_next_sibling('div')
+            if div_labels:
+                labels = div_labels.text
+            else:
+                labels = None
+
+            dict_all_items[itme_id] = labels
+        return dict_all_items
 
     def __str__(self):
         return self.url
