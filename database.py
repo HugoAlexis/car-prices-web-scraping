@@ -120,7 +120,7 @@ class Database:
         res = self.cursor.execute(query)
         return res.fetchall()
 
-    def select(self, table, columns='*', where_clause=None, where_params=None, verbose=False):
+    def select(self, table, columns='*', where_clause=None, where_params=None, verbose=False, return_column_names=False):
         """
            Executes a safe SELECT query on the database.
 
@@ -145,6 +145,9 @@ class Database:
         if verbose:
             print(query)
         self.cursor.execute(query, where_params or [])
+        column_names = [desc[0] for desc in self.cursor.description]
+        if return_column_names:
+            return column_names, self.cursor.fetchall()
         return self.cursor.fetchall()
 
     def insert(self, table, values, ignore_protected=True):
@@ -189,6 +192,20 @@ class Database:
             sql = sql.replace('?', '%s')
 
         self.query(sql, where_params or [])
+
+    def get_item_match(self, table_name, item_values):
+        columns = list(item_values.keys())
+        values = list(item_values.values())
+        where_clause = '\n'.join([f'{col} = ?' for col in columns])
+        column_names, db_item =  self.select(
+            table_name,
+            where_clause=where_clause,
+            where_params=values,
+            return_column_names=True)
+        if db_item:
+            return dict(zip(column_names, db_item[0]))
+        else:
+            return None
 
     @property
     def cursor(self):
