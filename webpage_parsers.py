@@ -122,7 +122,7 @@ class KavakItem(Scraper):
     def has_androidauto(self): return r'([A-ZÁÉÍÓÚa-záéíóú]{2})\s?Android Auto'
 
     @Scraper.re_extract_text(outer_tag='div.desktop_car-detail__start__BToHy')
-    def has_androidauto(self): return r'([A-ZÁÉÍÓÚa-záéíóú]{2})\s?Apple CarPlay'
+    def has_applecarplay(self): return r'([A-ZÁÉÍÓÚa-záéíóú]{2})\s?Apple CarPlay'
 
     @Scraper.re_extract_text(outer_tag='div.desktop_car-detail__start__BToHy')
     def body_style(self): return r'[^A-Z]([A-Z][a-zA-Z]*)Tipo de .arrocer.a'

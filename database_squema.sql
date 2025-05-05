@@ -11,8 +11,8 @@ CREATE TABLE versions (
 	model VARCHAR(75) NOT NULL,
 	version_name VARCHAR(75) NOT NULL,
 	year_prod SMALLINT NOT NULL,
-	body_style VARCHAR(25) NOT NULL,
-	engine_displacement DECIMAL(3, 1) NOT NULL,
+	body_style VARCHAR(25),
+	engine_displacement DECIMAL(3, 1),
 	transmission_type VARCHAR(25)
 );
 
@@ -40,8 +40,8 @@ CREATE TABLE version_details (
 	has_automatic_emergency_breaking BOOLEAN DEFAULT FALSE,
 	has_gps BOOLEAN DEFAULT FALSE,
 	has_sunroof BOOLEAN DEFAULT FALSE,
-    has_carplay BOOLEAN DEFAULT FALSE,
     has_androidauto BOOLEAN DEFAULT FALSE,
+    has_applecarplay BOOLEAN DEFAULT FALSE,
 	weight_kg SMALLINT
 );
 
@@ -51,8 +51,8 @@ CREATE TABLE cars (
 	car_id SERIAL PRIMARY KEY,
 	identifier SERIAL NOT NULL,
 	website VARCHAR(25) NOT NULL,
-	url VARCHAR(250) NOT NULL,
-	image_url VARCHAR(250),
+	url VARCHAR(350) NOT NULL,
+	image_url VARCHAR(350),
 	version_id BIGINT REFERENCES versions (version_id),
     CONSTRAINT unique_identifier_website UNIQUE (identifier, website)
 );
@@ -72,6 +72,7 @@ CREATE TABLE scrape_history (
 	scrape_id INT REFERENCES scrapes (scrape_id),
 	car_id INT REFERENCES cars (car_id),
 	labels TEXT,
+    price INT,
 	CONSTRAINT history_pkey PRIMARY KEY (scrape_id, car_id)
 );
 

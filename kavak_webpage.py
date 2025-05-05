@@ -3,8 +3,10 @@ from bs4 import BeautifulSoup
 from scraping import Scraper, PageIterator
 from webpage_parsers import KavakItem
 import time
+import re
 
 
+regex_odometer = re.compile('(\d+)\s?km')
 class KavakPageIterator(PageIterator):
     """
     This class implements the iteration protocol for scraping Kavak's paginated listings.
@@ -85,6 +87,51 @@ class KavakPageScraper(Scraper):
 
             dict_all_items[itme_id] = labels
         return dict_all_items
+
+    def prices_all_items(self):
+        dict_all_items = {}
+        for item in self.div_items.children:
+            if 'Vende tu auto' in item.text: continue
+            item_id = item.a.attrs['data-testid'].split('-')[-1]
+            div_price = item.select_one('span.amount_uki-amount__large__price__2NvVx')
+
+            if div_price:
+                dict_all_items[item_id] = div_price.text.strip().replace(',', '')
+            else:
+                dict_all_items[item_id] = None
+        return dict_all_items
+
+    def cities_all_items(self):
+        dict_all_items = {}
+        for item in self.div_items.children:
+            if 'Vende tu auto' in item.text:
+                continue
+            item_id = item.a.attrs['data-testid'].split('-')[-1]
+            div_city = item.select_one('span.card-product_cardProduct__footerInfo__HrxVa')
+            if div_city:
+                dict_all_items[item_id] = div_city.text.strip().capitalize()
+            else:
+                dict_all_items[item_id] = None
+        return dict_all_items
+
+    def odometer_all_items(self):
+        dict_all_items = {}
+        for item in self.div_items.children:
+            if 'Vende tu auto' in item.text:
+                continue
+            item_id = item.a.attrs['data-testid'].split('-')[-1]
+            div_odometer = item.select_one('p.card-product_cardProduct__subtitle__hbN2a')
+            if div_odometer:
+                odometer = re.findall(regex_odometer, div_odometer.text.replace(',', ''))
+                if odometer:
+                    dict_all_items[item_id] = odometer[0].strip()
+                else:
+                    dict_all_items[item_id] = None
+            else:
+                dict_all_items[item_id] = None
+        return dict_all_items
+
+
 
     def __str__(self):
         return self.url
