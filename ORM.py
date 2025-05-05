@@ -8,6 +8,7 @@ WEBSITE1 = os.getenv('WEBSITE1')
 
 class ObjectModelMixin:
     table_name = ''
+    table_id = []
     table_columns = []
 
     """
@@ -60,11 +61,23 @@ class ObjectModelMixin:
 
         return cls(**kwargs)
 
+    @classmethod
+    def from_db(cls, column_id, **kwargs):
+        if not isinstance(column_id, list):
+            column_id = [column_id]
+
+        item_values = db.get_item_match(
+            table_name=cls.table_name,
+            item_values=dict(zip(cls.table_id, column_id)))
+
+        return cls(**item_values, **kwargs)
+
 
 
 class Scrape(ObjectModelMixin):
     table_name = 'scrapes'
-    table_id = 'scrape_id'
+    table_id = ['scrape_id']
+    table_columns = ['datetime_start', 'datetime_end', 'finish_ok', 'error_type', 'error_msg']
 
     def __init__(self):
         self.scrape_id = self._get_id()
@@ -110,20 +123,20 @@ class Scrape(ObjectModelMixin):
 
 class Version(ObjectModelMixin):
     table_name = 'versions'
-    table_id = 'version_id'
+    table_id = ['version_id']
     table_columns = [
         'brand', 'model', 'version_name', 'year_prod', 'body_style', 'engine_displacement',
         'transmission_type'
     ]
 
-    def __init__(self, brand, model, version_name, year_prod, body_style, engine_displacement, transmission_type):
+    def __init__(self, brand, model, version_name, year_prod, body_style, engine_displacement, transmission_type, **kwargs):
         self.brand = brand.capitalize()
         self.model = model.capitalize()
         self.version_name = version_name.capitalize()
         self.year_prod = year_prod
-        self.body_style = body_style.upper()
-        self.engine_displacement = engine_displacement
-        self.transmission_type = transmission_type.capitalize()
+        self.body_style = body_style.upper() if body_style else None
+        self.engine_displacement = engine_displacement if engine_displacement else None
+        self.transmission_type = transmission_type.capitalize() if transmission_type else None
         self.version_id = self._get_id()
 
     def _get_id(self):
@@ -164,14 +177,14 @@ class Version(ObjectModelMixin):
 
 class VersionDetails(ObjectModelMixin):
     table_name = 'version_details'
-    table_id = 'version_id'
+    table_id = ['version_id']
     table_columns = [
         'mileage', 'cylinders', 'num_of_gears', 'fuel_range', 'engine_type',
         'fuel_type', 'horsepower', 'rim_inches', 'rim_material', 'num_of_doors',
         'num_of_passengers', 'num_of_airbags', 'has_abs', 'interior_materials',
         'has_start_button', 'has_cruise_control', 'has_distance_sensor', 'has_bluetooth',
         'has_rain_sensor', 'has_automatic_emergency_breaking', 'has_gps', 'has_sunroof',
-        'has_androidauto', 'weight_kg'
+        'has_androidauto', 'has_applecarplay', 'weight_kg'
     ]
 
     def __init__(
@@ -200,6 +213,7 @@ class VersionDetails(ObjectModelMixin):
             has_gps=None,
             has_sunroof=None,
             has_androidauto=None,
+            has_applecarplay=None,
             weight_kg=None,
             **kwargs
         ):
@@ -228,14 +242,13 @@ class VersionDetails(ObjectModelMixin):
         self.has_gps = bool(has_gps) if has_gps else False
         self.has_sunroof = bool(has_sunroof) if has_sunroof else False
         self.has_androidauto = bool(has_androidauto) if has_androidauto else False
+        self.has_applecarplay = bool(has_applecarplay) if has_applecarplay else False
         self.weight_kg = int(weight_kg) if weight_kg else None
-
-        print(self.has_androidauto)
 
     def _get_id(self, version_id):
         ids = db.select(
             table=self.table_name,
-            columns=['version_id'],
+            columns=self.table_id,
             where_clause="""
                 version_id = ?
             """,
@@ -257,7 +270,7 @@ class VersionDetails(ObjectModelMixin):
 
 class Car(ObjectModelMixin):
     table_name = 'cars'
-    table_id = 'car_id'
+    table_id = ['car_id']
     table_columns = [
         'url', 'image_url', 'report_url', 'website', 'identifier', 'car_id', 'version_id'
     ]
@@ -283,7 +296,7 @@ class Car(ObjectModelMixin):
     def _get_id(self):
         car_id = db.select(
             table=self.table_name,
-            columns=[self.table_id],
+            columns=self.table_id,
             where_clause="""
                 identifier = ? AND website = ?
             """,
@@ -297,7 +310,7 @@ class Car(ObjectModelMixin):
             self._already_exists = False
             all_ids = db.select(
                 table=self.table_name,
-                columns=[self.table_id],
+                columns=self.table_id,
             )
 
             if all_ids:
@@ -312,7 +325,8 @@ class Car(ObjectModelMixin):
 
 class CarInfo(ObjectModelMixin):
     table_name = 'car_info'
-    table_id = 'car_id'
+    table_id = ['car_id']
+    table_columns = ['city', 'odometer', 'image_path', 'report_path']
 
     def __init__(
             self,
@@ -325,7 +339,10 @@ class CarInfo(ObjectModelMixin):
         self.city = city
         self.odometer = odometer
         image_format = self._car_object.image_url.split('.')[-1]
-        report_format = self._car_object.report_url.split('.')[-1]
+        if image_format not in ['jpg', 'jpeg', 'png']:
+            image_format = 'webp'
+        report_format = 'pdf'
+
         self.image_path = os.path.join(
             'data',
             'images',
@@ -342,7 +359,7 @@ class CarInfo(ObjectModelMixin):
     def dump(self):
         id = db.select(
             table=self.table_name,
-            columns=[self.table_id],
+            columns=self.table_id,
             where_clause="""
                 car_id = ?
             """,
@@ -361,11 +378,13 @@ class ScrapeHistory(ObjectModelMixin):
             self,
             car_object,
             scrape_object,
-            labels
+            labels,
+            price
         ):
         self._car_object = car_object
         self._scrape_object = scrape_object
         self.car_id = car_object.car_id
         self.scrape_id = scrape_object.scrape_id
         self.labels = labels
+        self.price = price
 
