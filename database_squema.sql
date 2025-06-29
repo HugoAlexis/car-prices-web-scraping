@@ -50,8 +50,8 @@ CREATE TABLE version_details (
 CREATE TABLE cars (
 	car_id SERIAL PRIMARY KEY,
 	identifier SERIAL NOT NULL,
-	website VARCHAR(25) NOT NULL,
-	url VARCHAR(350) NOT NULL,
+	website TEXT NOT NULL,
+	url TEXT NOT NULL,
 	image_url VARCHAR(350),
 	version_id BIGINT REFERENCES versions (version_id),
     CONSTRAINT unique_identifier_website UNIQUE (identifier, website)

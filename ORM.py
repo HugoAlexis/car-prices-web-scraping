@@ -6,13 +6,13 @@ import os
 load_dotenv('.env')
 WEBSITE1 = os.getenv('WEBSITE1')
 
-class ObjectModelMixin:
+class ObjectModel:
     table_name = ''
     table_id = []
     table_columns = []
 
     """
-    A base mixin class for Object-Relational Mapping (ORM) models.
+    A base  class for Object-Relational Mapping (ORM) models.
 
     Functionality:
         - Insert (`dump`) and update (`update`) data in a database.
@@ -22,9 +22,10 @@ class ObjectModelMixin:
         - All database table columns must match an instance attribute or @property.
         - All extra instance attributes must start with _ or __ to be ignored by ORM methods.
 
-    Expected in subclasses:
+    Expected in subclasses (as class attributes):
         - `table_name`: Name of the table (str).
         - `table_columns`: List of valid column names (str) for the table.
+        - `table_id`: list of column names (str) that constitute the table id.
 
     Methods:
         - dump(): Inserts the object into the database.
@@ -46,7 +47,7 @@ class ObjectModelMixin:
 
     @classmethod
     def from_parser(cls, parser_obj, **kwargs):
-        """
+        """ 
         Create an instance of the ORM class from a parser object.
 
         Args:
@@ -74,7 +75,7 @@ class ObjectModelMixin:
 
 
 
-class Scrape(ObjectModelMixin):
+class Scrape(ObjectModel):
     table_name = 'scrapes'
     table_id = ['scrape_id']
     table_columns = ['datetime_start', 'datetime_end', 'finish_ok', 'error_type', 'error_msg']
@@ -110,7 +111,9 @@ class Scrape(ObjectModelMixin):
             self.finish_ok = False
             self.error_type = exc_type.__name__
             self.error_msg = str(exc_val)
+            db.connection.rollback()
         self.dump_update()
+        return True
 
     def dump_update(self):
         db.update(
@@ -121,7 +124,7 @@ class Scrape(ObjectModelMixin):
         )
 
 
-class Version(ObjectModelMixin):
+class Version(ObjectModel):
     table_name = 'versions'
     table_id = ['version_id']
     table_columns = [
@@ -175,7 +178,7 @@ class Version(ObjectModelMixin):
             super().dump()
 
 
-class VersionDetails(ObjectModelMixin):
+class VersionDetails(ObjectModel):
     table_name = 'version_details'
     table_id = ['version_id']
     table_columns = [
@@ -268,7 +271,7 @@ class VersionDetails(ObjectModelMixin):
 
 
 
-class Car(ObjectModelMixin):
+class Car(ObjectModel):
     table_name = 'cars'
     table_id = ['car_id']
     table_columns = [
@@ -323,7 +326,7 @@ class Car(ObjectModelMixin):
             super().dump()
 
 
-class CarInfo(ObjectModelMixin):
+class CarInfo(ObjectModel):
     table_name = 'car_info'
     table_id = ['car_id']
     table_columns = ['city', 'odometer', 'image_path', 'report_path']
@@ -371,7 +374,7 @@ class CarInfo(ObjectModelMixin):
             super().dump()
 
 
-class ScrapeHistory(ObjectModelMixin):
+class ScrapeHistory(ObjectModel):
     table_name = 'scrape_history'
 
     def __init__(
